@@ -1,3 +1,8 @@
+This project uses openzeppelin-foundry-upgrades for deploying and upgrading proxies. 
+
+Always clean the cache before running scripts or tests, using `forge clean`
+
+OR add `--force` flag with the command, e.g. `forge test --force`
 
 
 ## Usage
