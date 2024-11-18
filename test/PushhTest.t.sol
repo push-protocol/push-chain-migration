@@ -6,7 +6,7 @@ import { Pushh } from "src/Pushh.sol";
 import { Upgrades } from "openzeppelin-foundry-upgrades/Upgrades.sol";
 import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
 
-contract CounterTest is Test {
+contract PushhTest is Test {
     Pushh push;
     address owner = makeAddr("owner");
     address minter = makeAddr("minter");
@@ -41,10 +41,9 @@ contract CounterTest is Test {
         vm.expectRevert("Invalid Year");
         vm.prank(minter);
         push.mint(holder, 1000e18);
-
-        
     }
-    function testMinting() external{
+
+    function testMinting() external {
         uint256 mintable = push.YearToTotalSupply(1) - push.totalSupply();
 
         //Mint half amount in the starting of next year
@@ -52,7 +51,7 @@ contract CounterTest is Test {
         vm.prank(minter);
         push.mint(holder, mintable / 2);
 
-        assertEq(push.balanceOf(holder), initialSupply + mintable / 2 );
+        assertEq(push.balanceOf(holder), initialSupply + mintable / 2);
         assertEq(push.totalSupply(), initialSupply + mintable / 2);
 
         // mint half the amount towards middle of the year
@@ -65,6 +64,6 @@ contract CounterTest is Test {
 
         vm.expectRevert("Limit Exceed");
         vm.prank(minter);
-        push.mint(holder,  1);
+        push.mint(holder, 1);
     }
 }

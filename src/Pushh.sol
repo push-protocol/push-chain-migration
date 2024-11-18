@@ -26,7 +26,7 @@ contract Pushh is
     /// @custom:oz-upgrades-unsafe-allow constructor
 
     ///@dev 700 refers to 7%, to avoid round ups, divide by 10000
-    uint256 public ALLOWED_INFLATION;
+    uint256 public ALLOWED_INFLATION; //@audit-info : rename to maxMintCap
 
     ///@dev used to determine the time frame for minting
     uint256 public year;
@@ -37,7 +37,7 @@ contract Pushh is
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
     ///@dev stores the required total supply for an year
-    mapping(uint256 year => uint256 mintable) public YearToTotalSupply;
+    mapping(uint256 year => uint256 mintable) public YearToTotalSupply; //@audit-info : won't be needed if following ARB-style token.
 
     function initialize(address defaultAdmin, address minterRole, address recipient) public initializer {
         __ERC20_init("Pushh", "PSH");
@@ -49,7 +49,7 @@ contract Pushh is
         _grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin);
         _grantRole(MINTER_ROLE, minterRole);
 
-        _mint(recipient, 10_000_000_000 * 10 ** decimals());
+        _mint(recipient, 10_000_000_000 * 10 ** decimals()); // 10 billion tokens
 
         INIT = block.timestamp;
         ALLOWED_INFLATION = 700;
@@ -62,7 +62,7 @@ contract Pushh is
     }
 
     function currentYear() public view returns (uint256) {
-        return (block.timestamp - INIT) / year ;
+        return (block.timestamp - INIT) / year;
     }
 
     /**
@@ -78,8 +78,6 @@ contract Pushh is
         if (_currentYear == 0) {
             revert("Invalid Year");
         }
-        console.log(_currentYear);
-        console.log(YearToTotalSupply[_currentYear] , totalSupply());
         uint256 mintableAmount = YearToTotalSupply[_currentYear] - totalSupply();
 
         if (amount > mintableAmount) {
@@ -87,7 +85,7 @@ contract Pushh is
         }
         _mint(to, amount);
         if (YearToTotalSupply[_currentYear + 1] == 0) {
-            YearToTotalSupply[_currentYear + 1] = (mintableAmount * ALLOWED_INFLATION) / 10_000;
+            YearToTotalSupply[_currentYear + 1] = (mintableAmount * ALLOWED_INFLATION) / 10_000; //@audit - Critical Issue - 
         }
     }
 
