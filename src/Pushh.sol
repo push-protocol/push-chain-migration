@@ -63,7 +63,7 @@ contract Pushh is
         _mint(recipient, 10_000_000_000 * 10 ** decimals());
     }
 
-    function setMaxMintCap(uint256 _maxMint) external onlyRole(INFLATION_MANAGER_ROLE) {
+    function setMaxMintCap(uint256 _maxMint) external onlyRole(INFLATION_MANAGER_ROLE) whenNotPaused {
         maxMintCap = _maxMint;
     }
 
@@ -74,7 +74,7 @@ contract Pushh is
      *      The amount + totalSupply should not exceed inflation rate
      *      Sets the mintable amount for next year, if not already set
      */
-    function mint(address to, uint256 amount) public onlyRole(MINTER_ROLE) {
+    function mint(address to, uint256 amount) public onlyRole(MINTER_ROLE) whenNotPaused {
         if (amount > (totalSupply() * maxMintCap) / 10_000 || block.timestamp < nextMint) {
             revert("Pushh: Mint exceeds");
         }
