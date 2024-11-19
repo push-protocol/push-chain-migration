@@ -7,11 +7,11 @@ import { BaseTest } from "test/BaseTest.sol";
 import { console } from "lib/forge-std/src/console.sol";
 import { PushhV2 } from "src/MockHelpers/PushhV2.sol";
 import { PausableUpgradeable } from "lib/openzeppelin-contracts-upgradeable/contracts/utils/PausableUpgradeable.sol";
+import { TimelockControllerUpgradeable } from
+    "@openzeppelin/contracts-upgradeable/governance/TimelockControllerUpgradeable.sol";
+import { Helper } from "test/library.sol";
 
 contract CounterTest is BaseTest {
-    event Paused(address account);
-    event Unpaused(address account);
-
     function setUp() public override {
         BaseTest.setUp();
     }
@@ -122,6 +122,18 @@ contract CounterTest is BaseTest {
         uint256 deadline = governor.proposalDeadline(id);
         vm.roll(block.number + deadline);
         governor.queue(id);
+
+        //reverts if executed before time
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                TimelockUnexpectedOperationState.selector,
+                Helper.hashOperationBatch(
+                    targets, values, calldatas, bytes32(""), bytes20(address(governor)) ^ keccak256(bytes(description))
+                ),
+                Helper._encodeStateBitmap(Helper.OperationState.Ready)
+            )
+        );
+        governor.execute(id);
 
         //wait for timelock delay, then execute
         vm.warp(block.timestamp + 101);

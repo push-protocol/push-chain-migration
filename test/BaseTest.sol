@@ -6,11 +6,16 @@ import { PushGovernor } from "src/MockHelpers/PushGovernor.sol";
 import { PushTimelockController, TimelockControllerUpgradeable } from "src/MockHelpers/PushTimelockController.sol";
 import { Upgrades } from "openzeppelin-foundry-upgrades/Upgrades.sol";
 import { Test, console } from "forge-std/Test.sol";
-import { Vm } from "lib/forge-std/src/Vm.sol";
 import { ProxyAdmin } from "lib/openzeppelin-contracts/contracts/proxy/transparent/ProxyAdmin.sol";
 import { PushhV2 } from "src/MockHelpers/PushhV2.sol";
+import { Helper } from "test/library.sol";
 
 contract BaseTest is Test {
+    error TimelockUnexpectedOperationState(bytes32 operationId, bytes32 expectedStates);
+
+    event Paused(address account);
+    event Unpaused(address account);
+
     Pushh public push;
     PushhV2 public pushV2;
     PushTimelockController public timelock;
@@ -44,7 +49,7 @@ contract BaseTest is Test {
                 abi.encodeCall(Pushh.initialize, (owner, minter, inflationController, holder))
             )
         );
-        proxyAdmin = ProxyAdmin(getAdminFromEvents(vm.getRecordedLogs()));
+        proxyAdmin = ProxyAdmin(Helper.getAdminFromEvents(vm.getRecordedLogs()));
 
         proposers.push(futureGovernor);
         executors.push(futureGovernor);
@@ -72,15 +77,5 @@ contract BaseTest is Test {
         governor = PushGovernor(proxy);
 
         pushV2 = new PushhV2();
-    }
-
-    function getAdminFromEvents(Vm.Log[] memory logs) internal returns (address newAdmin) {
-        bytes memory data;
-        for (uint256 i = 0; i < logs.length; i++) {
-            if (logs[i].topics[0] == keccak256("AdminChanged(address,address)")) {
-                data = logs[i].data;
-            }
-        }
-        (, newAdmin) = abi.decode(data, (address, address));
     }
 }
