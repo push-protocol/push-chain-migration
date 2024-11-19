@@ -6,8 +6,12 @@ import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.so
 import { BaseTest } from "test/BaseTest.sol";
 import { console } from "lib/forge-std/src/console.sol";
 import { PushhV2 } from "src/MockHelpers/PushhV2.sol";
+import { PausableUpgradeable } from "lib/openzeppelin-contracts-upgradeable/contracts/utils/PausableUpgradeable.sol";
 
 contract CounterTest is BaseTest {
+    event Paused(address account);
+    event Unpaused(address account);
+
     function setUp() public override {
         BaseTest.setUp();
     }
@@ -17,6 +21,38 @@ contract CounterTest is BaseTest {
         assertTrue(push.hasRole(MINTER_ROLE, minter));
         assertTrue(push.hasRole(INFLATION_MANAGER_ROLE, inflationController));
         assertEq(push.balanceOf(holder), initialSupply);
+    }
+
+    function testPause() external {
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, minter, DEFAULT_ADMIN_ROLE)
+        );
+        vm.startPrank(minter);
+        push.pause();
+
+        vm.expectEmit(true, true, true, true);
+        emit Paused(owner);
+        vm.startPrank(owner);
+        push.pause();
+        assertTrue(push.paused());
+
+        vm.expectRevert(abi.encodeWithSelector(PausableUpgradeable.EnforcedPause.selector));
+        push.pause();
+
+        vm.expectRevert(
+            abi.encodeWithSelector(IAccessControl.AccessControlUnauthorizedAccount.selector, minter, DEFAULT_ADMIN_ROLE)
+        );
+        vm.startPrank(minter);
+        push.unpause();
+
+        vm.expectEmit(true, true, true, true);
+        emit Unpaused(owner);
+        vm.startPrank(owner);
+        push.unpause();
+        assertFalse(push.paused());
+
+        vm.expectRevert(abi.encodeWithSelector(PausableUpgradeable.ExpectedPause.selector));
+        push.unpause();
     }
 
     function test_Revert_Minting() external {
