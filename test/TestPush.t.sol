@@ -77,7 +77,7 @@ contract CounterTest is BaseTest {
         assertEq(push.balanceOf(holder), initialSupply + mintable1 / 2, "1");
         assertEq(push.totalSupply(), initialSupply + mintable1 / 2, "2");
 
-        // mint half the amount towards middle of the year
+        // revert miniting half the amount towards middle of the year
         vm.expectRevert("Pushh: Mint exceeds");
         vm.warp(block.timestamp + 150 days);
         changePrank(minter);
@@ -85,6 +85,32 @@ contract CounterTest is BaseTest {
 
         uint256 mintable2 = (push.totalSupply() * push.maxMintCap()) / 10_000;
         vm.warp(block.timestamp + 215 days);
+        push.mint(holder, mintable2);
+
+        assertEq(push.balanceOf(holder), initialSupply + mintable1 / 2 + mintable2, "3");
+        assertEq(push.totalSupply(), initialSupply + mintable1 / 2 + mintable2, "4");
+    }
+
+    function testMinting_WhenIncreaseLimit() external {
+        uint256 mintable1 = (push.totalSupply() * push.maxMintCap()) / 10_000;
+        assertEq(mintable1, (10_000_000_000e18 * 700) / 10000);
+        //Mint half amount in the starting of next year
+        vm.warp(block.timestamp + 365 days);
+        vm.startPrank(minter);
+        push.mint(holder, mintable1 / 2);
+
+        assertEq(push.balanceOf(holder), initialSupply + mintable1 / 2, "1");
+        assertEq(push.totalSupply(), initialSupply + mintable1 / 2, "2");
+
+        vm.startPrank(inflationController);
+        push.setMaxMintCap(900);
+        uint256 mintable2 = (push.totalSupply() * push.maxMintCap()) / 10_000;
+        assertEq(mintable2, ((initialSupply + mintable1 / 2) * 900) / 10000);
+
+
+        //  miniting after increasing inflation
+        vm.warp(block.timestamp + 365 days);
+        changePrank(minter);
         push.mint(holder, mintable2);
 
         assertEq(push.balanceOf(holder), initialSupply + mintable1 / 2 + mintable2, "3");
