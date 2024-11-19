@@ -13,7 +13,7 @@ import {
 import { ERC20VotesUpgradeable } from
     "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol";
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import { console } from "forge-std/Test.sol";
+import { PausableUpgradeable } from "lib/openzeppelin-contracts-upgradeable/contracts/utils/PausableUpgradeable.sol";
 
 contract Pushh is
     Initializable,
@@ -21,48 +21,50 @@ contract Pushh is
     ERC20BurnableUpgradeable,
     AccessControlUpgradeable,
     ERC20PermitUpgradeable,
-    ERC20VotesUpgradeable
+    ERC20VotesUpgradeable,
+    PausableUpgradeable
 {
     /// @custom:oz-upgrades-unsafe-allow constructor
 
     ///@dev 700 refers to 7%, to avoid round ups, divide by 10000
-    uint256 public ALLOWED_INFLATION; //@audit-info : rename to maxMintCap
+    uint256 public maxMintCap;
 
     ///@dev used to determine the time frame for minting
-    uint256 public year;
-
-    ///@dev initialized at deploy time, as a genesis value
-    uint256 public INIT;
+    uint256 public minimumMintInterval;
+    uint256 public nextMint;
 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    bytes32 public constant INFLATION_MANAGER_ROLE = keccak256("INFLATION_MANAGER_ROLE ");
 
-    ///@dev stores the required total supply for an year
-    mapping(uint256 year => uint256 mintable) public YearToTotalSupply; //@audit-info : won't be needed if following ARB-style token.
-
-    function initialize(address defaultAdmin, address minterRole, address recipient) public initializer {
+    function initialize(
+        address defaultAdmin,
+        address minterRole,
+        address inflationManager,
+        address recipient
+    )
+        public
+        initializer
+    {
         __ERC20_init("Pushh", "PSH");
         __ERC20Burnable_init();
         __AccessControl_init();
         __ERC20Permit_init("Pushh");
         __ERC20Votes_init();
+        __Pausable_init();
 
         _grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin);
         _grantRole(MINTER_ROLE, minterRole);
+        _grantRole(INFLATION_MANAGER_ROLE, inflationManager);
 
-        _mint(recipient, 10_000_000_000 * 10 ** decimals()); // 10 billion tokens
+        maxMintCap = 700;
+        minimumMintInterval = 365 days;
+        nextMint = block.timestamp + minimumMintInterval;
 
-        INIT = block.timestamp;
-        ALLOWED_INFLATION = 700;
-        year = 365 days;
-
-        uint256 initSupply = totalSupply();
-        YearToTotalSupply[currentYear()] = initSupply;
-        uint256 mintableAmount = (initSupply * ALLOWED_INFLATION) / 10_000;
-        YearToTotalSupply[currentYear() + 1] = initSupply + mintableAmount;
+        _mint(recipient, 10_000_000_000 * 10 ** decimals());
     }
 
-    function currentYear() public view returns (uint256) {
-        return (block.timestamp - INIT) / year;
+    function setMaxMintCap(uint256 _maxMint) external onlyRole(INFLATION_MANAGER_ROLE) {
+        maxMintCap = _maxMint;
     }
 
     /**
@@ -73,20 +75,20 @@ contract Pushh is
      *      Sets the mintable amount for next year, if not already set
      */
     function mint(address to, uint256 amount) public onlyRole(MINTER_ROLE) {
-        uint256 _currentYear = currentYear();
-
-        if (_currentYear == 0) {
-            revert("Invalid Year");
+        if (amount > (totalSupply() * maxMintCap) / 10_000 || block.timestamp < nextMint) {
+            revert("Pushh: Mint exceeds");
         }
-        uint256 mintableAmount = YearToTotalSupply[_currentYear] - totalSupply();
 
-        if (amount > mintableAmount) {
-            revert("Limit Exceed");
-        }
+        nextMint = block.timestamp + minimumMintInterval;
         _mint(to, amount);
-        if (YearToTotalSupply[_currentYear + 1] == 0) {
-            YearToTotalSupply[_currentYear + 1] = (mintableAmount * ALLOWED_INFLATION) / 10_000; //@audit - Critical Issue - 
-        }
+    }
+
+    function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _pause();
+    }
+
+    function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _unpause();
     }
 
     // The following functions are overrides required by Solidity.

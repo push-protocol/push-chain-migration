@@ -1,0 +1,85 @@
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.8.13;
+
+import { Pushh } from "src/Pushh.sol";
+import { PushGovernor } from "src/MockHelpers/PushGovernor.sol";
+import { PushTimelockController, TimelockControllerUpgradeable } from "src/MockHelpers/PushTimelockController.sol";
+import { Upgrades } from "openzeppelin-foundry-upgrades/Upgrades.sol";
+import { Test, console } from "forge-std/Test.sol";
+import { Vm } from "lib/forge-std/src/Vm.sol";
+import { ProxyAdmin } from "lib/openzeppelin-contracts/contracts/proxy/transparent/ProxyAdmin.sol";
+import { PushhV2 } from "src/MockHelpers/PushhV2.sol";
+
+contract BaseTest is Test {
+    Pushh public push;
+    PushhV2 public pushV2;
+    PushTimelockController public timelock;
+    PushGovernor public governor;
+    ProxyAdmin proxyAdmin;
+
+    address owner = makeAddr("owner");
+    address minter = makeAddr("minter");
+    address holder = makeAddr("holder");
+    address inflationController = makeAddr("inflationController");
+    address user = makeAddr("user");
+
+    uint256 initialSupply = 10_000_000_000e18;
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    bytes32 public constant INFLATION_MANAGER_ROLE = keccak256("INFLATION_MANAGER_ROLE ");
+
+    address[] proposers;
+    address[] executors;
+
+    function setUp() public virtual {
+        vm.warp(99);
+        vm.startPrank(owner);
+        address futureTimelock = vm.computeCreateAddress(owner, vm.getNonce(owner) + 3);
+        address futureGovernor = vm.computeCreateAddress(owner, vm.getNonce(owner) + 5);
+        vm.recordLogs();
+        push = Pushh(
+            Upgrades.deployTransparentProxy(
+                "Pushh.sol",
+                futureTimelock,
+                abi.encodeCall(Pushh.initialize, (owner, minter, inflationController, holder))
+            )
+        );
+        proxyAdmin = ProxyAdmin(getAdminFromEvents(vm.getRecordedLogs()));
+
+        proposers.push(futureGovernor);
+        executors.push(futureGovernor);
+
+        proposers.push(futureTimelock);
+        executors.push(futureTimelock);
+
+        console.log(proposers[0], proposers[1]);
+
+        address payable timeProxy = payable(
+            Upgrades.deployTransparentProxy(
+                "PushTimelockController.sol",
+                owner,
+                abi.encodeCall(TimelockControllerUpgradeable.initialize, (100, proposers, executors, futureTimelock))
+            )
+        );
+
+        timelock = PushTimelockController(timeProxy);
+
+        address payable proxy = payable(
+            Upgrades.deployTransparentProxy(
+                "PushGovernor.sol", owner, abi.encodeCall(PushGovernor.initialize, (push, timelock, 1, 100, 800_000e18))
+            )
+        );
+        governor = PushGovernor(proxy);
+
+        pushV2 = new PushhV2();
+    }
+
+    function getAdminFromEvents(Vm.Log[] memory logs) internal returns (address newAdmin) {
+        bytes memory data;
+        for (uint256 i = 0; i < logs.length; i++) {
+            if (logs[i].topics[0] == keccak256("AdminChanged(address,address)")) {
+                data = logs[i].data;
+            }
+        }
+        (, newAdmin) = abi.decode(data, (address, address));
+    }
+}

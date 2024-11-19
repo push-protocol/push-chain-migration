@@ -18,7 +18,7 @@ contract CounterScript is Script {
         vm.startBroadcast();
 
         address proxy = Upgrades.deployTransparentProxy(
-            "Pushh.sol", owner, abi.encodeCall(Pushh.initialize, (owner, minter, holder))
+            "Pushh.sol", owner, abi.encodeCall(Pushh.initialize, (owner, minter, owner, holder))
         );
 
         vm.stopBroadcast();
