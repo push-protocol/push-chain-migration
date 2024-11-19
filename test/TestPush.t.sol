@@ -36,6 +36,17 @@ contract CounterTest is BaseTest {
         push.pause();
         assertTrue(push.paused());
 
+        uint256 mintable1 = (push.totalSupply() * push.maxMintCap()) / 10_000;
+        vm.warp(block.timestamp + 365 days);
+        vm.expectRevert(abi.encodeWithSelector(PausableUpgradeable.EnforcedPause.selector));
+        changePrank(minter);
+        push.mint(holder, mintable1);
+
+        vm.expectRevert(abi.encodeWithSelector(PausableUpgradeable.EnforcedPause.selector));
+        vm.startPrank(inflationController);
+        push.setMaxMintCap(900);
+        
+        vm.startPrank(owner);
         vm.expectRevert(abi.encodeWithSelector(PausableUpgradeable.EnforcedPause.selector));
         push.pause();
 
