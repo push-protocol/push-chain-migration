@@ -11,7 +11,7 @@ library Helper {
         Done
     }
 
-    function getAdminFromEvents(Vm.Log[] memory logs) external returns (address newAdmin) {
+    function getAdminFromEvents(Vm.Log[] memory logs) external pure returns (address newAdmin) {
         bytes memory data;
         for (uint256 i = 0; i < logs.length; i++) {
             if (logs[i].topics[0] == keccak256("AdminChanged(address,address)")) {

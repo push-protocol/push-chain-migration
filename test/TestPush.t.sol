@@ -16,7 +16,7 @@ contract CounterTest is BaseTest {
         BaseTest.setUp();
     }
 
-    function test_Init() external {
+    function test_Init() external view {
         assertEq(push.totalSupply(), initialSupply);
         assertTrue(push.hasRole(MINTER_ROLE, minter));
         assertTrue(push.hasRole(INFLATION_MANAGER_ROLE, inflationController));
@@ -45,7 +45,7 @@ contract CounterTest is BaseTest {
         vm.expectRevert(abi.encodeWithSelector(PausableUpgradeable.EnforcedPause.selector));
         vm.startPrank(inflationController);
         push.setMaxMintCap(900);
-        
+
         vm.startPrank(owner);
         vm.expectRevert(abi.encodeWithSelector(PausableUpgradeable.EnforcedPause.selector));
         push.pause();
@@ -104,7 +104,7 @@ contract CounterTest is BaseTest {
 
     function testMinting_WhenIncreaseLimit() external {
         uint256 mintable1 = (push.totalSupply() * push.maxMintCap()) / 10_000;
-        assertEq(mintable1, (10_000_000_000e18 * 700) / 10000);
+        assertEq(mintable1, (10_000_000_000e18 * 700) / 10_000);
         //Mint half amount in the starting of next year
         vm.warp(block.timestamp + 365 days);
         vm.startPrank(minter);
@@ -116,8 +116,7 @@ contract CounterTest is BaseTest {
         vm.startPrank(inflationController);
         push.setMaxMintCap(900);
         uint256 mintable2 = (push.totalSupply() * push.maxMintCap()) / 10_000;
-        assertEq(mintable2, ((initialSupply + mintable1 / 2) * 900) / 10000);
-
+        assertEq(mintable2, ((initialSupply + mintable1 / 2) * 900) / 10_000);
 
         //  miniting after increasing inflation
         vm.warp(block.timestamp + 365 days);
