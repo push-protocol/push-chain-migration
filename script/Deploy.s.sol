@@ -5,7 +5,7 @@ import { Script, console } from "forge-std/Script.sol";
 import { Pushh } from "src/Pushh.sol";
 import { Upgrades } from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
-contract CounterScript is Script {
+contract DeployScript is Script {
     Pushh public pushh;
     address owner = makeAddr("owner");
     address minter = makeAddr("minter");

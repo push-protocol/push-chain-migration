@@ -11,7 +11,7 @@ import { TimelockControllerUpgradeable } from
     "@openzeppelin/contracts-upgradeable/governance/TimelockControllerUpgradeable.sol";
 import { Helper } from "test/library.sol";
 
-contract CounterTest is BaseTest {
+contract PushTest is BaseTest {
     function setUp() public override {
         BaseTest.setUp();
     }
