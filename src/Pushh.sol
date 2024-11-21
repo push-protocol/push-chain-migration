@@ -39,8 +39,7 @@ contract Pushh is
     // Errors
     error InvalidArgument();
     error InvalidAccess();
-    error MaxAmountsExceeded();
-
+    
     // Events
     event MintCapSet(uint256 newMintCap);
 
