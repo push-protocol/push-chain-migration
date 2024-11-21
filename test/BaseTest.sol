@@ -30,7 +30,7 @@ contract BaseTest is Test {
 
     uint256 initialSupply = 10_000_000_000e18;
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    bytes32 public constant INFLATION_MANAGER_ROLE = keccak256("INFLATION_MANAGER_ROLE ");
+    bytes32 public constant INFLATION_MANAGER_ROLE = keccak256("INFLATION_MANAGER_ROLE");
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
 
     address[] proposers;

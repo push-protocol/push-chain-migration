@@ -1,16 +1,13 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import { Upgrades } from "openzeppelin-foundry-upgrades/Upgrades.sol";
 import { IAccessControl } from "@openzeppelin/contracts/access/IAccessControl.sol";
 import { BaseTest } from "test/BaseTest.sol";
 import { console } from "lib/forge-std/src/console.sol";
 import { PushhV2 } from "src/MockHelpers/PushhV2.sol";
 import { PausableUpgradeable } from "lib/openzeppelin-contracts-upgradeable/contracts/utils/PausableUpgradeable.sol";
-import { TimelockControllerUpgradeable } from
-    "@openzeppelin/contracts-upgradeable/governance/TimelockControllerUpgradeable.sol";
 import { Helper } from "test/library.sol";
-
+import { Pushh } from "src/Pushh.sol";
 contract PushTest is BaseTest {
     function setUp() public override {
         BaseTest.setUp();
@@ -73,7 +70,7 @@ contract PushTest is BaseTest {
 
         push.mint(owner, 100_000e18);
 
-        vm.expectRevert("Pushh: Mint exceeds");
+        vm.expectRevert(abi.encodeWithSelector(Pushh.InvalidAccess.selector));
         changePrank(minter);
         push.mint(holder, 1000e18);
     }
@@ -89,7 +86,7 @@ contract PushTest is BaseTest {
         assertEq(push.totalSupply(), initialSupply + mintable1 / 2, "2");
 
         // revert miniting half the amount towards middle of the year
-        vm.expectRevert("Pushh: Mint exceeds");
+        vm.expectRevert(abi.encodeWithSelector(Pushh.InvalidAccess.selector));
         vm.warp(block.timestamp + 150 days);
         changePrank(minter);
         push.mint(holder, mintable1 - mintable1 / 2);
