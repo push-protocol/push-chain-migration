@@ -36,7 +36,7 @@ contract PushTest is BaseTest {
         push.pause();
         assertTrue(push.paused());
 
-        uint256 mintable1 = (push.totalSupply() * push.maxMintCap()) / 10_000;
+        uint256 mintable1 = (push.totalSupply() * push.MAX_MINT_CAP()) / 10_000;
         vm.warp(block.timestamp + 365 days);
         vm.expectRevert(abi.encodeWithSelector(PausableUpgradeable.EnforcedPause.selector));
         changePrank(minter);
@@ -79,7 +79,7 @@ contract PushTest is BaseTest {
     }
 
     function testMinting() external {
-        uint256 mintable1 = (push.totalSupply() * push.maxMintCap()) / 10_000;
+        uint256 mintable1 = (push.totalSupply() * push.MAX_MINT_CAP()) / 10_000;
         //Mint half amount in the starting of next year
         vm.warp(block.timestamp + 365 days);
         changePrank(minter);
@@ -94,7 +94,7 @@ contract PushTest is BaseTest {
         changePrank(minter);
         push.mint(holder, mintable1 - mintable1 / 2);
 
-        uint256 mintable2 = (push.totalSupply() * push.maxMintCap()) / 10_000;
+        uint256 mintable2 = (push.totalSupply() * push.MAX_MINT_CAP()) / 10_000;
         vm.warp(block.timestamp + 215 days);
         push.mint(holder, mintable2);
 
@@ -103,7 +103,7 @@ contract PushTest is BaseTest {
     }
 
     function testMinting_WhenIncreaseLimit() external {
-        uint256 mintable1 = (push.totalSupply() * push.maxMintCap()) / 10_000;
+        uint256 mintable1 = (push.totalSupply() * push.MAX_MINT_CAP()) / 10_000;
         assertEq(mintable1, (10_000_000_000e18 * 700) / 10_000);
         //Mint half amount in the starting of next year
         vm.warp(block.timestamp + 365 days);
@@ -115,7 +115,7 @@ contract PushTest is BaseTest {
 
         vm.startPrank(inflationController);
         push.setMaxMintCap(900);
-        uint256 mintable2 = (push.totalSupply() * push.maxMintCap()) / 10_000;
+        uint256 mintable2 = (push.totalSupply() * push.MAX_MINT_CAP()) / 10_000;
         assertEq(mintable2, ((initialSupply + mintable1 / 2) * 900) / 10_000);
 
         //  miniting after increasing inflation
