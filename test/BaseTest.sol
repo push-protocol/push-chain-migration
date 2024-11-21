@@ -2,12 +2,12 @@
 pragma solidity ^0.8.13;
 
 import { Pushh } from "src/Pushh.sol";
-import { PushGovernor } from "src/MockHelpers/PushGovernor.sol";
-import { PushTimelockController, TimelockControllerUpgradeable } from "src/MockHelpers/PushTimelockController.sol";
+import { PushGovernor } from "src/mock_helpers/PushGovernor.sol";
+import { PushTimelockController, TimelockControllerUpgradeable } from "src/mock_helpers/PushTimelockController.sol";
 import { Upgrades } from "openzeppelin-foundry-upgrades/Upgrades.sol";
 import { Test, console } from "forge-std/Test.sol";
 import { ProxyAdmin } from "lib/openzeppelin-contracts/contracts/proxy/transparent/ProxyAdmin.sol";
-import { PushhV2 } from "src/MockHelpers/PushhV2.sol";
+import { PushhV2 } from "src/mock_helpers/PushhV2.sol";
 import { Helper } from "test/library.sol";
 
 contract BaseTest is Test {

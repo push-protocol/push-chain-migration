@@ -39,7 +39,7 @@ contract Pushh is
     // Errors
     error InvalidArgument();
     error InvalidAccess();
-    
+
     // Events
     event MintCapSet(uint256 newMintCap);
 
