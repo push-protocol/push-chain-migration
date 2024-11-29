@@ -14,8 +14,10 @@ import { ERC20VotesUpgradeable } from
     "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20VotesUpgradeable.sol";
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import { PausableUpgradeable } from "lib/openzeppelin-contracts-upgradeable/contracts/utils/PausableUpgradeable.sol";
+import {INttToken} from "@wormhole-foundation/native_token_transfer/interfaces/INttToken.sol";
 
-contract Pushh is
+contract PushhSpokeToken is
+    INttToken,
     Initializable,
     ERC20Upgradeable,
     ERC20BurnableUpgradeable,
@@ -24,20 +26,6 @@ contract Pushh is
     ERC20VotesUpgradeable,
     PausableUpgradeable
 {
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
-    }
-
-    ///@dev 700 refers to 7%, to avoid round ups, divide by 10000
-    uint256 public MAX_MINT_CAP;
-    ///@dev used to determine the time frame for minting
-    uint256 public constant MIN_MINT_INTERVAL = 365 days;
-    ///@dev used to determine the time frame for next possible minting
-    uint256 public nextMint;
-
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    bytes32 public constant INFLATION_MANAGER_ROLE = keccak256("INFLATION_MANAGER_ROLE");
 
     // Errors
     error InvalidArgument();
@@ -46,11 +34,24 @@ contract Pushh is
     // Events
     event MintCapSet(uint256 newMintCap);
 
+    // State Variables
+    /// @notice address of the minter to ensure compatibility with NTT Hub-and-Spoke Method
+    address public minter;
+
+    modifier onlyMinter() {
+        if (msg.sender != minter) {
+            revert CallerNotMinter(msg.sender);
+        }
+        _;
+    }
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     function initialize(
-        address defaultAdmin,
-        address minterRole,
-        address inflationManager,
-        address recipient
+        address defaultAdmin
     )
         public
         initializer
@@ -63,28 +64,25 @@ contract Pushh is
         __Pausable_init();
 
         if (
-            defaultAdmin == address(0) || minterRole == address(0) || inflationManager == address(0)
-                || recipient == address(0)
+            defaultAdmin == address(0)
         ) {
             revert InvalidArgument();
         }
 
         _grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin);
-        _grantRole(MINTER_ROLE, minterRole);
-        _grantRole(INFLATION_MANAGER_ROLE, inflationManager);
-
-        MAX_MINT_CAP = 700;
-        nextMint = block.timestamp + MIN_MINT_INTERVAL;
-
-        _mint(recipient, 10_000_000_000 * 10 ** decimals());
     }
 
-    /**
-     * @notice allows the inflation manager to set/update the mint cap
-     */
-    function setMaxMintCap(uint256 _maxMint) external onlyRole(INFLATION_MANAGER_ROLE) whenNotPaused {
-        MAX_MINT_CAP = _maxMint;
-        emit MintCapSet(_maxMint);
+    /// NOTE: the `setMinter` method is added for INttToken Interface support.
+    /// @notice Sets a new minter address, only callable by the contract owner.
+    /// @param newMinter The address of the new minter.
+    function setMinter(address newMinter) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (newMinter == address(0)) {
+            revert InvalidMinterZeroAddress();
+        }
+        address previousMinter = minter;
+        minter = newMinter;
+
+        emit NewMinter(previousMinter, newMinter);
     }
 
     /**
@@ -92,16 +90,7 @@ contract Pushh is
      * @dev only Minter can call
      *      reverts if an year has not passed
      */
-    function mint(address to, uint256 amount) public onlyRole(MINTER_ROLE) whenNotPaused {
-        uint256 maxMintableAmount = getMaxMintableAmount();
-        if (amount > maxMintableAmount) {
-            revert InvalidArgument();
-        }
-        if (block.timestamp < nextMint) {
-            revert InvalidAccess();
-        }
-
-        nextMint = block.timestamp + MIN_MINT_INTERVAL;
+    function mint(address to, uint256 amount) external onlyMinter whenNotPaused {
         _mint(to, amount);
     }
 
@@ -119,20 +108,6 @@ contract Pushh is
         _unpause();
     }
 
-    /**
-     * @notice returns the max mintable amount for the current year
-     */
-    function getMaxMintableAmount() public view returns (uint256) {
-        return (totalSupply() * MAX_MINT_CAP) / 10_000;
-    }
-    /**
-     * @notice returns the time (in seconds) until the next mint
-     */
-
-    function timeUntilNextMint() public view returns (uint256) {
-        return block.timestamp >= nextMint ? 0 : nextMint - block.timestamp;
-    }
-
     // The following functions are overrides required by Solidity.
 
     function _update(
@@ -148,5 +123,11 @@ contract Pushh is
 
     function nonces(address owner) public view override(ERC20PermitUpgradeable, NoncesUpgradeable) returns (uint256) {
         return super.nonces(owner);
+    }
+
+    /// @notice A function that will burn tokens held by the `msg.sender`.
+    /// @param _value The amount of tokens to be burned.
+    function burn(uint256 _value) public override(INttToken, ERC20BurnableUpgradeable) {
+        ERC20BurnableUpgradeable.burn(_value);
     }
 }
