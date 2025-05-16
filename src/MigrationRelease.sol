@@ -50,7 +50,7 @@ contract MigrationRelease is Ownable {
         uint _amount,
         uint _id,
         bytes32[] calldata _merkleProof
-    ) external onlyOwner {
+    ) external {
         bytes32 leaf = keccak256(abi.encodePacked(_recipient, _amount,_id));
         require(
             verifyAddress(_recipient, _amount, _id, _merkleProof) &&
@@ -70,7 +70,7 @@ contract MigrationRelease is Ownable {
         address _recipient,
         uint _amount,uint _id,
         bytes32[] calldata _merkleProof
-    ) external onlyOwner {
+    ) external {
         bytes32 leaf = keccak256(abi.encodePacked(_recipient, _amount,_id));
         require(
             instantClaimTime[leaf] + VESTING_PERIOD < block.timestamp &&
