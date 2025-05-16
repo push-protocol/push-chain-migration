@@ -35,6 +35,11 @@ module.exports = {
       accounts: [process.env.PRIVATE]
       ,
     },
+    pushlocalnet: {
+      url: "http://127.0.0.1:8545",
+      accounts: [process.env.PRIVATE]
+      ,
+    },
 
     sepolia: {
       url: `https://gateway.tenderly.co/public/sepolia`,

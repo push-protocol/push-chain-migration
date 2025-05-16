@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-
+import "hardhat/console.sol";
 contract MigrationRelease is Ownable {
     event ReleasedInstant(
         address indexed recipient,
@@ -24,7 +24,7 @@ contract MigrationRelease is Ownable {
 
     bytes32 public merkleRoot;
 
-    uint public constant VESTING_PERIOD = 60 days;
+    uint public constant VESTING_PERIOD = 5 minutes;
 
     mapping(bytes32 => uint) instantClaimTime;
 
@@ -33,7 +33,9 @@ contract MigrationRelease is Ownable {
     constructor(address initialOwner) Ownable(initialOwner) {}
 
     function setMerkleRoot(bytes32 _merkleRoot) external onlyOwner {
+        console.logBytes32(merkleRoot);
         merkleRoot = _merkleRoot;
+        console.logBytes32(merkleRoot);
         emit MerkleRootUpdated(merkleRoot, _merkleRoot);
     }
 
