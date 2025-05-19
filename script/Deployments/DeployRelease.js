@@ -22,8 +22,6 @@ async function main() {
   const tx = await release.setMerkleRoot(root);
   await tx.wait();
   console.log("Merkle Root set in contract:", await release.merkleRoot());
-
-
 }
 
 main().catch((err) => {

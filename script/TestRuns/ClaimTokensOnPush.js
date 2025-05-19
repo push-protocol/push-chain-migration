@@ -28,6 +28,9 @@ async function main() {
     await tx.wait();
     console.log("📌 Merkle root updated:", root);
 
+
+    // Uncomment the following lines to test the instant release phase
+
     // Instant release phase
     // for (const { address, amount, id } of claims) {
     //     const proof = getProof(address, amount, id, claims);
