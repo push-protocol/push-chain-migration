@@ -25,6 +25,8 @@ contract MigrationRelease is Ownable {
     bytes32 public merkleRoot;
 
     uint public constant VESTING_PERIOD = 5 minutes;
+    uint public immutable INSTANT_RATIO;
+    uint public immutable VESTING_RATIO;
 
     uint public totalReleased;
 
@@ -32,7 +34,13 @@ contract MigrationRelease is Ownable {
 
     mapping(bytes32 => bool) claimedvested;
 
-    constructor(address initialOwner) Ownable(initialOwner) {}
+    constructor(address initialOwner, uint _instantRatio, uint _vestingRatio) Ownable(initialOwner) {
+        if (_instantRatio == 0 || _vestingRatio == 0) {
+            revert("Invalid Ratio");
+        }
+        INSTANT_RATIO = _instantRatio;
+        VESTING_RATIO = _vestingRatio;
+    }
 
     function setMerkleRoot(bytes32 _merkleRoot) external onlyOwner {
         if (_merkleRoot == bytes32(0) || _merkleRoot == merkleRoot) {
@@ -60,7 +68,7 @@ contract MigrationRelease is Ownable {
                 instantClaimTime[leaf] == 0,
             "Not Whitelisted or already Claimed"
         );
-        uint instantAmount = _amount * 5; //Instantly relaese 5 times the amount
+        uint instantAmount = _amount * INSTANT_RATIO; //Instantly relaese 5 times the amount
 
         instantClaimTime[leaf] = block.timestamp;
         totalReleased += instantAmount;
@@ -79,15 +87,18 @@ contract MigrationRelease is Ownable {
         bytes32[] calldata _merkleProof
     ) external {
         bytes32 leaf = keccak256(abi.encodePacked(_recipient, _amount, _id));
-        require(
-            instantClaimTime[leaf] + VESTING_PERIOD < block.timestamp &&
-                instantClaimTime[leaf] > 0 &&
-                verifyAddress(_recipient, _amount, _id, _merkleProof) &&
-                claimedvested[leaf] == false,
-            "Not Whitelisted"
-        );
+        if (claimedvested[leaf] == true) {
+            revert("Already Claimed");
+        }
 
-        uint vestedAmount = _amount * 10; // Vested amount is 10 times the amount
+        if(
+            instantClaimTime[leaf] == 0 ||
+            instantClaimTime[leaf] + VESTING_PERIOD > block.timestamp
+        ) {
+            revert("Not Whitelisted or Not Vested");
+        }
+        
+        uint vestedAmount = _amount * VESTING_RATIO; // Vested amount is 10 times the amount
         claimedvested[leaf] = true;
         totalReleased += vestedAmount;
         // Logic to release vested funds

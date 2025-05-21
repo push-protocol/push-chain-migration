@@ -54,7 +54,7 @@ describe("Migration Merkle Test", function () {
         const root = tree.getHexRoot();
 
         const Release = await ethers.getContractFactory("MigrationRelease");
-        release = await Release.deploy(owner.address);
+        release = await Release.deploy(owner.address, 5, 10);
         await release.connect(owner).addFunds({ value: ethers.parseEther("10000") });
         await release.connect(owner).transferOwnership(owner.address);
         await release.connect(owner).setMerkleRoot(root);
@@ -146,7 +146,7 @@ describe("Migration Merkle Test", function () {
 
         await expect(
             release.connect(owner).releaseVested(userClaim.address, userClaim.amount, userClaim.id, proof)
-        ).to.be.revertedWith("Not Whitelisted");
+        ).to.be.revertedWith("Not Whitelisted or Not Vested");
     });
 
     // Simple test for the totalReleased counter
@@ -185,4 +185,15 @@ describe("Migration Merkle Test", function () {
             release.connect(owner).setMerkleRoot(currentRoot)
         ).to.be.revertedWith("Invalid Merkle Root");
     });
+
+    it("Admin can burn tokens", async () => {
+        const amountToBurn = ethers.parseEther("100");
+        const initialBalance = await pushToken.balanceOf(locker.target);
+
+        await locker.connect(owner).burn(amountToBurn);
+
+        const finalBalance = await pushToken.balanceOf(locker.target);
+        expect(finalBalance).to.equal(initialBalance - amountToBurn);
+    }
+    );
 });

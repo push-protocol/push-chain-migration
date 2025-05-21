@@ -11,7 +11,7 @@ async function main() {
 
   // Deploy MigrationRelease
   const Release = await ethers.getContractFactory("MigrationRelease");
-  const release = await Release.deploy(deployer.address);
+  const release = await Release.deploy(deployer.address,5,10);
   await release.waitForDeployment();
   console.log("MigrationRelease deployed at:", await release.getAddress());
 
