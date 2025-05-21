@@ -56,7 +56,7 @@ async function main() {
 
         const before = await ethers.provider.getBalance(address);
         try {
-            const tx = await release.releaseVested(address, amount, id, proof);
+            const tx = await release.releaseVested(address, amount, id);
             await tx.wait();
             const after = await ethers.provider.getBalance(address);
 

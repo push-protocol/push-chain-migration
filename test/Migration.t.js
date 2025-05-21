@@ -128,10 +128,10 @@ describe("Migration Merkle Test", function () {
 
         const before = await ethers.provider.getBalance(userClaim.address);
         await release.connect(owner).releaseInstant(userClaim.address, userClaim.amount, userClaim.id, proof);
-        await ethers.provider.send("evm_increaseTime", [60 * 24 * 60 * 60]);
+        await ethers.provider.send("evm_increaseTime", [90 * 24 * 60 * 60]);
         await ethers.provider.send("evm_mine");
 
-        await release.connect(owner).releaseVested(userClaim.address, userClaim.amount, userClaim.id, proof);
+        await release.connect(owner).releaseVested(userClaim.address, userClaim.amount, userClaim.id);
         const after = await ethers.provider.getBalance(userClaim.address);
 
         const expected = userClaim.amount * 15n; // 5x + 10x
@@ -145,7 +145,7 @@ describe("Migration Merkle Test", function () {
         const proof = tree.getHexProof(leaf);
 
         await expect(
-            release.connect(owner).releaseVested(userClaim.address, userClaim.amount, userClaim.id, proof)
+            release.connect(owner).releaseVested(userClaim.address, userClaim.amount, userClaim.id)
         ).to.be.revertedWith("Not Whitelisted or Not Vested");
     });
 
@@ -164,11 +164,11 @@ describe("Migration Merkle Test", function () {
         expect(afterInstantTotal - beforeTotal).to.equal(userClaim.amount * 5n);
 
         // Wait for vesting period
-        await ethers.provider.send("evm_increaseTime", [60 * 24 * 60 * 60]);
+        await ethers.provider.send("evm_increaseTime", [90 * 24 * 60 * 60]);
         await ethers.provider.send("evm_mine");
 
         // Do vested release
-        await release.connect(owner).releaseVested(userClaim.address, userClaim.amount, userClaim.id, proof);
+        await release.connect(owner).releaseVested(userClaim.address, userClaim.amount, userClaim.id);
 
         const afterVestedTotal = await release.totalReleased();
         expect(afterVestedTotal - afterInstantTotal).to.equal(userClaim.amount * 10n);
