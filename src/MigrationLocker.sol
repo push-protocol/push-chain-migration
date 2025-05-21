@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity ^0.8.20;
+
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {IEPNS} from "./Mocks/IPush.sol";
 
 /// @title MigrationLocker
 /// @author Push Chain
 /// @notice Allows users to lock their Push tokens for migration
-contract MigrationLocker is Ownable {
+contract MigrationLocker is Initializable, OwnableUpgradeable {
     using SafeERC20 for IERC20;
 
     /// @notice Emitted when a user locks their tokens
@@ -21,7 +23,16 @@ contract MigrationLocker is Ownable {
 
     uint counter;
 
-    constructor(address _push, address _admin) Ownable(_admin) {
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    /// @notice Initializes the contract instead of constructor
+    /// @param _push The address of the PUSH token
+    /// @param _admin The address of the admin
+    function initialize(address _push, address _admin) public initializer {
+        __Ownable_init(_admin);
         PUSH_TOKEN = _push;
     }
 
@@ -42,8 +53,6 @@ contract MigrationLocker is Ownable {
     /// @dev The function can only be called by the contract owner
     /// @param _amount The amount of tokens to burn
     /// @dev The function calls the burn function of the IEPNS contract to burn the specified amount of tokens
-    /// @dev Emits a Burn event with the amount burned
-
     function burn(uint _amount) external onlyOwner {
         IEPNS(PUSH_TOKEN).burn(_amount);
     }

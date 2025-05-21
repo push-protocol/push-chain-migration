@@ -1,6 +1,8 @@
 require("@nomicfoundation/hardhat-toolbox");
 const path = require("path");
 require("dotenv").config();
+require('@openzeppelin/hardhat-upgrades');
+
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: {
@@ -42,7 +44,7 @@ module.exports = {
     },
 
     sepolia: {
-      url: `https://gateway.tenderly.co/public/sepolia`,
+      url: `https://sepolia.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
       accounts: [process.env.PRIVATE]
 
     }

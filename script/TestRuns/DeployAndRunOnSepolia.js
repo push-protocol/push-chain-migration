@@ -16,8 +16,13 @@ async function main() {
   const pushToken = ERC20.attach(TOKEN_ADDRESS);
 
   // Deploy MigrationLocker
-  const Locker = await ethers.getContractFactory("MigrationLocker");
-  const locker = await Locker.deploy(TOKEN_ADDRESS, deployer.address);
+  const MigrationLocker = await ethers.getContractFactory("MigrationLocker");
+  console.log("Deploying MigrationLocker with transparent proxy...");
+  const locker = await upgrades.deployProxy(
+    MigrationLocker,
+    [TOKEN_ADDRESS, deployer.address],
+    { kind: "transparent", initializer: "initialize" }
+  );
   await locker.waitForDeployment();
   console.log("MigrationLocker deployed at:", await locker.getAddress());
 
