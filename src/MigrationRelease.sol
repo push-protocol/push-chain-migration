@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-import "hardhat/console.sol";
+
 contract MigrationRelease is Ownable {
     event ReleasedInstant(
         address indexed recipient,
@@ -26,6 +26,8 @@ contract MigrationRelease is Ownable {
 
     uint public constant VESTING_PERIOD = 5 minutes;
 
+    uint public totalReleased;
+
     mapping(bytes32 => uint) instantClaimTime;
 
     mapping(bytes32 => bool) claimedvested;
@@ -33,10 +35,11 @@ contract MigrationRelease is Ownable {
     constructor(address initialOwner) Ownable(initialOwner) {}
 
     function setMerkleRoot(bytes32 _merkleRoot) external onlyOwner {
-        console.logBytes32(merkleRoot);
-        merkleRoot = _merkleRoot;
-        console.logBytes32(merkleRoot);
+        if (_merkleRoot == bytes32(0) || _merkleRoot == merkleRoot) {
+            revert("Invalid Merkle Root");
+        }
         emit MerkleRootUpdated(merkleRoot, _merkleRoot);
+        merkleRoot = _merkleRoot;
     }
 
     function addFunds() external payable onlyOwner {
@@ -51,7 +54,7 @@ contract MigrationRelease is Ownable {
         uint _id,
         bytes32[] calldata _merkleProof
     ) external {
-        bytes32 leaf = keccak256(abi.encodePacked(_recipient, _amount,_id));
+        bytes32 leaf = keccak256(abi.encodePacked(_recipient, _amount, _id));
         require(
             verifyAddress(_recipient, _amount, _id, _merkleProof) &&
                 instantClaimTime[leaf] == 0,
@@ -60,30 +63,36 @@ contract MigrationRelease is Ownable {
         uint instantAmount = _amount * 5; //Instantly relaese 5 times the amount
 
         instantClaimTime[leaf] = block.timestamp;
+        totalReleased += instantAmount;
 
         // Logic to release funds instantly
-        payable(_recipient).transfer(instantAmount);
+
+        (bool res, ) = payable(_recipient).call{value: instantAmount}("");
+        require(res, "Transfer failed");
         emit ReleasedInstant(_recipient, instantAmount, block.timestamp);
     }
 
     function releaseVested(
         address _recipient,
-        uint _amount,uint _id,
+        uint _amount,
+        uint _id,
         bytes32[] calldata _merkleProof
     ) external {
-        bytes32 leaf = keccak256(abi.encodePacked(_recipient, _amount,_id));
+        bytes32 leaf = keccak256(abi.encodePacked(_recipient, _amount, _id));
         require(
             instantClaimTime[leaf] + VESTING_PERIOD < block.timestamp &&
                 instantClaimTime[leaf] > 0 &&
-                verifyAddress(_recipient, _amount,_id, _merkleProof) &&
+                verifyAddress(_recipient, _amount, _id, _merkleProof) &&
                 claimedvested[leaf] == false,
             "Not Whitelisted"
         );
 
         uint vestedAmount = _amount * 10; // Vested amount is 10 times the amount
         claimedvested[leaf] = true;
+        totalReleased += vestedAmount;
         // Logic to release vested funds
-        payable(_recipient).transfer(vestedAmount);
+        (bool res, ) = payable(_recipient).call{value: vestedAmount}("");
+        require(res, "Transfer failed");
         emit ReleasedVested(_recipient, vestedAmount, block.timestamp);
     }
 
