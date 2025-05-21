@@ -98,21 +98,17 @@ contract MigrationRelease is Ownable {
 
         instantClaimTime[leaf] = block.timestamp;
         totalReleased += instantAmount;
-
-        // Logic to release funds instantly
-
-        (bool res, ) = payable(_recipient).call{value: instantAmount}("");
-        require(res, "Transfer failed");
         emit ReleasedInstant(_recipient, instantAmount, block.timestamp);
+
+        transferFunds(_recipient, instantAmount);
     }
 
-
     /// @notice Allows users to release their vested tokens
-    /// @param _recipient The address of the recipient      
+    /// @param _recipient The address of the recipient
     /// @param _amount The amount of tokens to release
     /// @param _id The unique identifier for the release
     /// @dev checks if the recipient is whitelisted and has not claimed before
-    /// @dev checks if the vesting period has passed    
+    /// @dev checks if the vesting period has passed
     /// @dev calculates the vested amount based on the VESTING_RATIO
     /// @dev updates the claimedvested mapping and totalReleased variable
     /// @dev transfers the vested amount to the recipient, reverting if the transfer fails
@@ -138,10 +134,19 @@ contract MigrationRelease is Ownable {
         uint vestedAmount = _amount * VESTING_RATIO; // Vested amount is 10 times the amount
         claimedvested[leaf] = true;
         totalReleased += vestedAmount;
-        // Logic to release vested funds
-        (bool res, ) = payable(_recipient).call{value: vestedAmount}("");
-        require(res, "Transfer failed");
         emit ReleasedVested(_recipient, vestedAmount, block.timestamp);
+        transferFunds(_recipient, vestedAmount);
+    }
+
+    function transferFunds(
+        address _recipient,
+        uint _amount
+    ) internal {
+        if (address(this).balance < _amount) {
+            revert("Insufficient balance");
+        }
+        (bool res, ) = payable(_recipient).call{value: _amount}("");
+        require(res, "Transfer failed");
     }
 
     function verifyAddress(
