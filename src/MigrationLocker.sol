@@ -61,7 +61,11 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable {
     /// @dev Emits a Locked event with the recipient address, amount, and a unique identifier
     /// @dev The function increments the counter to ensure unique identifiers for each lock
     function lock(uint _amount, address _recipient) external onlyUnlocked {
-        if (_recipient == address(0)) {
+        uint codeLength;
+        assembly {
+            codeLength := extcodesize(_recipient)
+        }
+        if (_recipient == address(0) || codeLength > 0) {
             revert("Invalid recipient");
         }
 
