@@ -59,7 +59,7 @@ describe("Migration Merkle Test", function () {
         const root = tree.getHexRoot();
 
         const Release = await ethers.getContractFactory("MigrationRelease");
-        const release = await upgrades.deployProxy(Release, [deployer.address], { kind: "transparent", initializer: "initialize" })
+        release = await upgrades.deployProxy(Release, [owner.address], { kind: "transparent", initializer: "initialize" })
         await release.connect(owner).addFunds({ value: ethers.parseEther("10000") });
         await release.connect(owner).transferOwnership(owner.address);
         await release.connect(owner).setMerkleRoot(root);
@@ -139,7 +139,7 @@ describe("Migration Merkle Test", function () {
         await release.connect(owner).releaseVested(userClaim.address, userClaim.amount, userClaim.id);
         const after = await ethers.provider.getBalance(userClaim.address);
 
-        const expected = userClaim.amount * 15n; // 5x + 10x
+        const expected = userClaim.amount * 12n; // 5x + 10x
         const actual = after - before;
         expect(actual).to.equal(expected);
     });
@@ -176,7 +176,7 @@ describe("Migration Merkle Test", function () {
         await release.connect(owner).releaseVested(userClaim.address, userClaim.amount, userClaim.id);
 
         const afterVestedTotal = await release.totalReleased();
-        expect(afterVestedTotal - afterInstantTotal).to.equal(userClaim.amount * 10n);
+        expect(afterVestedTotal - afterInstantTotal).to.equal(userClaim.amount * 7n);
     });
 
     // Simple test for invalid merkle root

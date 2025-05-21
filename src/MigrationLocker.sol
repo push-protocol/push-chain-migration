@@ -20,6 +20,7 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable {
     event Locked(address recipient, uint amount, uint indexed id);
 
     address public PUSH_TOKEN;
+    bool public isLocked;
 
     uint counter;
 
@@ -31,10 +32,25 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable {
     /// @notice Initializes the contract instead of constructor
     /// @param _push The address of the PUSH token
     /// @param initialOwner The address of the admin
-    function initialize(address _push, address initialOwner) public initializer {
+    function initialize(
+        address _push,
+        address initialOwner
+    ) public initializer {
         __Ownable2Step_init();
         __Ownable_init(initialOwner);
         PUSH_TOKEN = _push;
+    }
+
+    modifier onlyUnlocked() {
+        if (isLocked) {
+            revert("Contract is locked");
+        }
+        _;
+    }
+
+    /// @dev admin can lock the contract
+    function setToggleLock() external onlyOwner {
+        isLocked = !isLocked;
     }
 
     /// @notice Allows users to lock their tokens for migration
@@ -44,8 +60,11 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable {
     /// @dev The function transfers the specified amount of tokens from the user to the contract
     /// @dev Emits a Locked event with the recipient address, amount, and a unique identifier
     /// @dev The function increments the counter to ensure unique identifiers for each lock
-    function lock(uint _amount, address _recipient) external {
-        require(_recipient != address(0), "invalid recipient");
+    function lock(uint _amount, address _recipient) external onlyUnlocked {
+        if (_recipient == address(0)) {
+            revert("Invalid recipient");
+        }
+
         IERC20(PUSH_TOKEN).safeTransferFrom(msg.sender, address(this), _amount);
         emit Locked(_recipient, _amount, counter++);
     }
@@ -54,7 +73,7 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable {
     /// @dev The function can only be called by the contract owner
     /// @param _amount The amount of tokens to burn
     /// @dev The function calls the burn function of the IEPNS contract to burn the specified amount of tokens
-    function burn(uint _amount) external onlyOwner {
+    function burn(uint _amount) external onlyOwner onlyUnlocked {
         IEPNS(PUSH_TOKEN).burn(_amount);
     }
 
@@ -62,7 +81,7 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable {
         address _token,
         address _to,
         uint _amount
-    ) external onlyOwner {
+    ) external onlyOwner onlyUnlocked {
         require(_to != address(0), "Invalid recipient");
 
         if (_token == address(0)) {
