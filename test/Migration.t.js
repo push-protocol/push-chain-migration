@@ -76,7 +76,7 @@ describe("Migration Merkle Test", function () {
             ).to.emit(release, "ReleasedInstant");
 
             const afterBalance = await ethers.provider.getBalance(userClaim.address);
-            const expected = userClaim.amount * 5n;
+            const expected = (userClaim.amount * 75n) /10n;
             const actual = afterBalance - beforeBalance;
 
             expect(actual).to.equal(expected);
@@ -139,7 +139,7 @@ describe("Migration Merkle Test", function () {
         await release.connect(owner).releaseVested(userClaim.address, userClaim.amount, userClaim.id);
         const after = await ethers.provider.getBalance(userClaim.address);
 
-        const expected = userClaim.amount * 12n; // 5x + 10x
+        const expected = userClaim.amount * 15n; // 5x + 10x
         const actual = after - before;
         expect(actual).to.equal(expected);
     });
@@ -166,7 +166,7 @@ describe("Migration Merkle Test", function () {
         await release.connect(owner).releaseInstant(userClaim.address, userClaim.amount, userClaim.id, proof);
 
         const afterInstantTotal = await release.totalReleased();
-        expect(afterInstantTotal - beforeTotal).to.equal(userClaim.amount * 5n);
+        expect(afterInstantTotal - beforeTotal).to.equal((userClaim.amount * 75n)/10n);
 
         // Wait for vesting period
         await ethers.provider.send("evm_increaseTime", [90 * 24 * 60 * 60]);
@@ -176,7 +176,7 @@ describe("Migration Merkle Test", function () {
         await release.connect(owner).releaseVested(userClaim.address, userClaim.amount, userClaim.id);
 
         const afterVestedTotal = await release.totalReleased();
-        expect(afterVestedTotal - afterInstantTotal).to.equal(userClaim.amount * 7n);
+        expect(afterVestedTotal - afterInstantTotal).to.equal((userClaim.amount * 75n) / 10n);
     });
 
     // Simple test for invalid merkle root

@@ -32,8 +32,8 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable {
     bytes32 public merkleRoot;
 
     uint public constant VESTING_PERIOD = 90 days;
-    uint public constant INSTANT_RATIO = 5;
-    uint public constant VESTING_RATIO = 7;
+    uint public constant INSTANT_RATIO = 75;
+    uint public constant VESTING_RATIO = 75;
 
     uint public totalReleased;
 
@@ -98,7 +98,7 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable {
                 instantClaimTime[leaf] == 0,
             "Not Whitelisted or already Claimed"
         );
-        uint instantAmount = _amount * INSTANT_RATIO; //Instantly relaese 5 times the amount
+        uint instantAmount = (_amount * INSTANT_RATIO) / 10; //Instantly relaese 7.5 times the amount
 
         instantClaimTime[leaf] = block.timestamp;
         totalReleased += instantAmount;
@@ -135,7 +135,7 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable {
             revert("Not Whitelisted or Not Vested");
         }
 
-        uint vestedAmount = _amount * VESTING_RATIO; // Vested amount is 10 times the amount
+        uint vestedAmount = (_amount * VESTING_RATIO) / 10; // Vested amount is 7.5 times the amount
         claimedvested[leaf] = true;
         totalReleased += vestedAmount;
         emit ReleasedVested(_recipient, vestedAmount, block.timestamp);
