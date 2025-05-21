@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-const { ethers } = require("hardhat");
+const { ethers, upgrades } = require("hardhat");
 const whitelist = require("../../output/claims.json");
 const { getRoot } = require("../utils/merkle");
 
@@ -11,12 +11,12 @@ async function main() {
 
   // Deploy MigrationRelease
   const Release = await ethers.getContractFactory("MigrationRelease");
-  const release = await Release.deploy(deployer.address,5,10);
+  const release = await upgrades.deployProxy(Release, [deployer.address], { kind: "transparent", initializer: "initialize" })
   await release.waitForDeployment();
   console.log("MigrationRelease deployed at:", await release.getAddress());
 
-  console .log("creating and updating merkle root");
-  const root =  getRoot(whitelist);
+  console.log("creating and updating merkle root");
+  const root = getRoot(whitelist);
   console.log("Merkle Root:", root);
 
   const tx = await release.setMerkleRoot(root);

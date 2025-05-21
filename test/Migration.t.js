@@ -22,7 +22,7 @@ describe("Migration Merkle Test", function () {
         }
 
         const MigrationLocker = await ethers.getContractFactory("MigrationLocker");
-         locker = await upgrades.deployProxy(
+        locker = await upgrades.deployProxy(
             MigrationLocker,
             [pushToken.target, owner.address],
             { kind: "transparent", initializer: "initialize" }
@@ -59,7 +59,7 @@ describe("Migration Merkle Test", function () {
         const root = tree.getHexRoot();
 
         const Release = await ethers.getContractFactory("MigrationRelease");
-        release = await Release.deploy(owner.address, 5, 10);
+        const release = await upgrades.deployProxy(Release, [deployer.address], { kind: "transparent", initializer: "initialize" })
         await release.connect(owner).addFunds({ value: ethers.parseEther("10000") });
         await release.connect(owner).transferOwnership(owner.address);
         await release.connect(owner).setMerkleRoot(root);

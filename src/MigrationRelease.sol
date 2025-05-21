@@ -1,13 +1,17 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity ^0.8.20;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @title MigrationRelease
 /// @author Push Chain
 /// @notice Allows users to claim their tokens based on a Merkle tree proof
-contract MigrationRelease is Ownable {
+contract MigrationRelease is Initializable, Ownable2StepUpgradeable {
+    using SafeERC20 for IERC20;
     event ReleasedInstant(
         address indexed recipient,
         uint indexed amount,
@@ -28,8 +32,8 @@ contract MigrationRelease is Ownable {
     bytes32 public merkleRoot;
 
     uint public constant VESTING_PERIOD = 90 days;
-    uint public immutable INSTANT_RATIO;
-    uint public immutable VESTING_RATIO;
+    uint public constant INSTANT_RATIO = 5;
+    uint public constant VESTING_RATIO = 7;
 
     uint public totalReleased;
 
@@ -37,16 +41,16 @@ contract MigrationRelease is Ownable {
 
     mapping(bytes32 => bool) claimedvested;
 
-    constructor(
-        address initialOwner,
-        uint _instantRatio,
-        uint _vestingRatio
-    ) Ownable(initialOwner) {
-        if (_instantRatio == 0 || _vestingRatio == 0) {
-            revert("Invalid Ratio");
-        }
-        INSTANT_RATIO = _instantRatio;
-        VESTING_RATIO = _vestingRatio;
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(
+        address initialOwner
+    ) public initializer {
+        __Ownable2Step_init();
+        __Ownable_init(initialOwner);
     }
 
     /// @notice Sets the Merkle root for the contract
@@ -138,10 +142,7 @@ contract MigrationRelease is Ownable {
         transferFunds(_recipient, vestedAmount);
     }
 
-    function transferFunds(
-        address _recipient,
-        uint _amount
-    ) internal {
+    function transferFunds(address _recipient, uint _amount) internal {
         if (address(this).balance < _amount) {
             revert("Insufficient balance");
         }
@@ -157,5 +158,25 @@ contract MigrationRelease is Ownable {
     ) private view returns (bool) {
         bytes32 leaf = keccak256(abi.encodePacked(recipient, amount, _id));
         return MerkleProof.verify(_merkleProof, merkleRoot, leaf);
+    }
+
+    function recoverFunds(
+        address _token,
+        address _to,
+        uint _amount
+    ) external onlyOwner {
+        require(_to != address(0), "Invalid recipient");
+
+        if (_token == address(0)) {
+            transferFunds(_to, _amount);
+            return;
+        } else {
+            require(
+                _amount > 0 &&
+                    _amount <= IERC20(_token).balanceOf(address(this)),
+                "Invalid amount"
+            );
+            IERC20(_token).safeTransfer(_to, _amount);
+        }
     }
 }
