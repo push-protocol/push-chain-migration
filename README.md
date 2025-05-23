@@ -2,12 +2,33 @@
 
 This project implements a secure, two-phase token migration system for the PUSH token ecosystem, enabling users to migrate from the existing PUSH token to a new implementation. The project is built using Solidity and Foundry, with transparent upgradeable proxies for future extensibility.
 
+## Details on Migration
+The migration of tokens is from:
+- **Old Token:** ERC20 Push Token on Ethereum [@0xf418588522d5dd018b425e472991e52ebbeeeeee](https://etherscan.io/token/0xf418588522d5dd018b425e472991e52ebbeeeeee)
+- **New Token:** Native $PUSH Token on Push Chain. ( *Push Chain is a EVM-Compatible chain on Cosmos with a native token called PUSH*)
+
+**Migration Amounts**
+- Token migration is planned to be at a 1:15 ratio (1 Push Protocol token = 15 Push Chain tokens).
+- The token holders on Ethereum will be required to lock their token in the `MigrationLocker` contract.
+- The token holders will be able to release/claim their migrated tokens using the `MigrationRelease` contract on Push Chain.
+- The release of tokens will be a two phase release:
+a. **Instant Release:** Allows users to claim 50% of their migrated tokens ( 7.5 out of 15 ratio ) instantly.
+b. **Vested Release:** Allows users to claim the remaininig 50% of their migrated token 90 days after the instant release.
+
+**Migration Proofs**
+- The verification of token locked is done using Merkle Proofs.
+- When users lock their tokens, an event emission occurs which is recorded offchain.
+- These emissions are then used to generate proofs for each deposit by a given address.
+- Users can use these proofs later on Push Chain's `MigrationRelease` contract to claim their migration tokens.
+
+---
+
 ## System Architecture
 
 The migration system consists of two main components:
 
-1. **MigrationLocker**: A contract that allows users to lock their PUSH tokens for migration
-2. **MigrationRelease**: A contract that enables whitelisted users to claim their migrated tokens in two phases
+1. **MigrationLocker**: A contract that allows users to lock their PUSH tokens for migration. *To Deployed on Ethereum Mainnet*
+2. **MigrationRelease**: A contract that enables whitelisted users to claim their migrated tokens in two phases. *To Deployed on Push Mainnet*
 
 ### Technical Stack
 
@@ -105,23 +126,6 @@ The system uses the following security measures for claims verification:
 - Critical functions are protected with `onlyOwner` modifier
 - The MigrationLocker can be toggled between locked and unlocked states
 
-### Fund Safety
-
-- Both contracts include emergency fund recovery functions
-- Fund transfers use safe transfer patterns to prevent common vulnerabilities
-- The MigrationRelease contract checks for sufficient balance before transfers
-
-## Deployment Process
-
-The deployment process consists of several steps:
-
-1. Deploy the MigrationLocker contract to accept token locks
-2. Users lock their tokens in the MigrationLocker contract
-3. Generate a Merkle Tree from lock events using the provided scripts
-4. Deploy the MigrationRelease contract with the generated Merkle root
-5. Fund the MigrationRelease contract with tokens for distribution
-6. Users can claim their tokens in two phases (instant and vested)
-
 ### Deployment Scripts
 
 - `script/Deployments/DeployLocker.js`: Deploys the MigrationLocker contract
@@ -198,7 +202,7 @@ When auditing this codebase, please focus on:
 7. **Upgradeability Concerns**: Reviewing the proxy pattern implementation for security issues
 8. **Gas Optimization**: Identifying potential gas optimizations without compromising security
 
-Pay special attention to the scripts that generate the Merkle tree as they are crucial for the security of the entire system.
+**Note: Pay special attention to the scripts that generate the Merkle tree as they are crucial for the security of the entire system.**
 
 ## Important Constants
 
