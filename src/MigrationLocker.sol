@@ -22,6 +22,7 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable {
     bool public isMigrationPause;
 
     uint counter;
+    maapping(address => uint) public lockedAmount;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -63,6 +64,7 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable {
         if (_recipient == address(0) || codeLength > 0) {
             revert("Invalid recipient");
         }
+        lockedAmount[msg.sender] += _amount;
 
         IPUSH(PUSH_TOKEN).transferFrom(msg.sender, address(this), _amount);
         emit Locked(_recipient, _amount, counter++);

@@ -43,6 +43,8 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable {
 
     mapping(bytes32 => bool) claimedvested;
 
+    mapping(address => uint) public claimedAmount;
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -116,6 +118,7 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable {
 
         instantClaimTime[leaf] = block.timestamp;
         totalReleased += instantAmount;
+        claimedAmount[_recipient] += instantAmount;
         emit ReleasedInstant(_recipient, instantAmount, block.timestamp);
 
         transferFunds(_recipient, instantAmount);
@@ -152,6 +155,7 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable {
         uint vestedAmount = (_amount * VESTING_RATIO) / 10; // Vested amount is 7.5 times the amount
         claimedvested[leaf] = true;
         totalReleased += vestedAmount;
+        claimedAmount[_recipient] += vestedAmount;
         emit ReleasedVested(_recipient, vestedAmount, block.timestamp);
         transferFunds(_recipient, vestedAmount);
     }
