@@ -2,7 +2,7 @@
 pragma solidity ^0.8.11;
 pragma experimental ABIEncoderV2;
 
-interface IEPNS {
+interface IPUSH{
     struct Checkpoint {
         uint32 fromBlock;
         uint96 votes;

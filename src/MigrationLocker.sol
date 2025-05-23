@@ -1,17 +1,14 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
-pragma solidity ^0.8.20;
+pragma solidity 0.8.29;
 
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {IEPNS} from "./Mocks/IPush.sol";
+import {IPUSH} from "./Mocks/IPush.sol";
 
 /// @title MigrationLocker
 /// @author Push Chain
 /// @notice Allows users to lock their Push tokens for migration
 contract MigrationLocker is Initializable, Ownable2StepUpgradeable {
-    using SafeERC20 for IERC20;
 
     /// @notice Emitted when a user locks their tokens
     /// @param recipient The address of the recipient
@@ -19,8 +16,10 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable {
     /// @param id The unique identifier for the lock
     event Locked(address recipient, uint amount, uint indexed id);
 
-    address public constant PUSH_TOKEN = 0xf418588522d5dd018b425E472991E52EBBeEEEEE;
-    bool public isLocked;
+    address public constant PUSH_TOKEN =
+        0x37c779a1564DCc0e3914aB130e0e787d93e21804;
+
+    bool public isMigrationPause;
 
     uint counter;
 
@@ -30,17 +29,15 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable {
     }
 
     /// @notice Initializes the contract instead of constructor
-    /// @param _push The address of the PUSH token
     /// @param initialOwner The address of the admin
-    function initialize(
-        address initialOwner
-    ) public initializer {
+    function initialize(address initialOwner) public initializer {
+        require(initialOwner != address(0), "Invalid owner");
         __Ownable2Step_init();
         __Ownable_init(initialOwner);
     }
 
     modifier onlyUnlocked() {
-        if (isLocked) {
+        if (isMigrationPause) {
             revert("Contract is locked");
         }
         _;
@@ -48,7 +45,7 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable {
 
     /// @dev admin can lock the contract
     function setToggleLock() external onlyOwner {
-        isLocked = !isLocked;
+        isMigrationPause = !isMigrationPause;
     }
 
     /// @notice Allows users to lock their tokens for migration
@@ -67,16 +64,16 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable {
             revert("Invalid recipient");
         }
 
-        IERC20(PUSH_TOKEN).safeTransferFrom(msg.sender, address(this), _amount);
+        IPUSH(PUSH_TOKEN).transferFrom(msg.sender, address(this), _amount);
         emit Locked(_recipient, _amount, counter++);
     }
 
     /// @notice Allows the owner to burn a specified amount of tokens
     /// @dev The function can only be called by the contract owner
     /// @param _amount The amount of tokens to burn
-    /// @dev The function calls the burn function of the IEPNS contract to burn the specified amount of tokens
+    /// @dev The function calls the burn function of the IPUSH contract to burn the specified amount of tokens
     function burn(uint _amount) external onlyOwner onlyUnlocked {
-        IEPNS(PUSH_TOKEN).burn(_amount);
+        IPUSH(PUSH_TOKEN).burn(_amount);
     }
 
     function recoverFunds(
@@ -86,19 +83,10 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable {
     ) external onlyOwner onlyUnlocked {
         require(_to != address(0), "Invalid recipient");
 
-        if (_token == address(0)) {
-            if (address(this).balance < _amount) {
-                revert("Insufficient balance");
-            }
-            (bool res, ) = payable(_to).call{value: _amount}("");
-            require(res, "Transfer failed");
-        } else {
-            require(
-                _amount > 0 &&
-                    _amount <= IERC20(_token).balanceOf(address(this)),
-                "Invalid amount"
-            );
-            IERC20(_token).safeTransfer(_to, _amount);
-        }
+        require(
+            _amount > 0 && _amount <= IPUSH(_token).balanceOf(address(this)),
+            "Invalid amount"
+        );
+        IPUSH(_token).transfer(_to, _amount);
     }
 }

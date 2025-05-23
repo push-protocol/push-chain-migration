@@ -23,13 +23,14 @@ describe("Migration Merkle Test", function () {
             await pushToken.transfer(user.address, ethers.parseEther("500"));
         }
 
-        const MigrationLocker = await ethers.getContractFactory("MigrationLocker");
+        const MigrationLocker = await ethers.getContractFactory("MigrationLocker2");
         locker = await upgrades.deployProxy(
             MigrationLocker,
             [owner.address],
             { kind: "transparent", initializer: "initialize" }
         );
         await locker.waitForDeployment();
+        await locker.setToken(pushToken.target);
 
         await pushToken.connect(user1).approve(locker.target, ethers.parseEther("100"));
         await locker.connect(user1).lock(ethers.parseEther("100"), user1.address);

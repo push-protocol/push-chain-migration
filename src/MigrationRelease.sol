@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
-pragma solidity ^0.8.20;
+pragma solidity 0.8.29;
 
 import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -36,6 +36,8 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable {
     uint public constant VESTING_RATIO = 75;
 
     uint public totalReleased;
+    bool public isClaimPaused;
+
 
     mapping(bytes32 => uint) instantClaimTime;
 
@@ -53,11 +55,23 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable {
         __Ownable_init(initialOwner);
     }
 
+        modifier onlyUnlocked() {
+        if (isClaimPaused) {
+            revert("Contract is locked");
+        }
+        _;
+    }
+
+    /// @dev admin can lock the contract
+    function setToggleLock() external onlyOwner {
+        isClaimPaused = !isClaimPaused;
+    }
+
     /// @notice Sets the Merkle root for the contract
     /// @param _merkleRoot The new Merkle root
     /// @dev Only the contract owner can call this function
     /// @dev The function checks if the new Merkle root is valid and not equal to the current root
-    function setMerkleRoot(bytes32 _merkleRoot) external onlyOwner {
+    function setMerkleRoot(bytes32 _merkleRoot) external onlyOwner  {
         if (_merkleRoot == bytes32(0) || _merkleRoot == merkleRoot) {
             revert("Invalid Merkle Root");
         }
@@ -91,7 +105,7 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable {
         uint _amount,
         uint _id,
         bytes32[] calldata _merkleProof
-    ) external {
+    ) external onlyUnlocked {
         bytes32 leaf = keccak256(abi.encodePacked(_recipient, _amount, _id));
         require(
             verifyAddress(_recipient, _amount, _id, _merkleProof) &&
@@ -122,7 +136,7 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable {
         address _recipient,
         uint _amount,
         uint _id
-    ) external {
+    ) external onlyUnlocked {
         bytes32 leaf = keccak256(abi.encodePacked(_recipient, _amount, _id));
         if (claimedvested[leaf] == true) {
             revert("Already Claimed");
@@ -142,7 +156,7 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable {
         transferFunds(_recipient, vestedAmount);
     }
 
-    function transferFunds(address _recipient, uint _amount) internal {
+    function transferFunds(address _recipient, uint _amount) private {
         if (address(this).balance < _amount) {
             revert("Insufficient balance");
         }
