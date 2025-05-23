@@ -20,7 +20,7 @@ async function main() {
   console.log("Deploying MigrationLocker with transparent proxy...");
   const locker = await upgrades.deployProxy(
     MigrationLocker,
-    [TOKEN_ADDRESS, deployer.address],
+    [deployer.address],
     { kind: "transparent", initializer: "initialize" }
   );
   await locker.waitForDeployment();

@@ -19,7 +19,7 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable {
     /// @param id The unique identifier for the lock
     event Locked(address recipient, uint amount, uint indexed id);
 
-    address public PUSH_TOKEN;
+    address public constant PUSH_TOKEN = 0xf418588522d5dd018b425E472991E52EBBeEEEEE;
     bool public isLocked;
 
     uint counter;
@@ -33,12 +33,10 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable {
     /// @param _push The address of the PUSH token
     /// @param initialOwner The address of the admin
     function initialize(
-        address _push,
         address initialOwner
     ) public initializer {
         __Ownable2Step_init();
         __Ownable_init(initialOwner);
-        PUSH_TOKEN = _push;
     }
 
     modifier onlyUnlocked() {

@@ -13,6 +13,8 @@ describe("Migration Merkle Test", function () {
         const Token = await ethers.getContractFactory("EPNS");
         pushToken = await Token.deploy(owner.address);
 
+        console.log("PUSH Token deployed at:", pushToken.target);
+
         await pushToken.transfer(user1.address, ethers.parseEther("1000"));
         await pushToken.transfer(user2.address, ethers.parseEther("2000"));
         await pushToken.transfer(user3.address, ethers.parseEther("3000"));
@@ -24,7 +26,7 @@ describe("Migration Merkle Test", function () {
         const MigrationLocker = await ethers.getContractFactory("MigrationLocker");
         locker = await upgrades.deployProxy(
             MigrationLocker,
-            [pushToken.target, owner.address],
+            [owner.address],
             { kind: "transparent", initializer: "initialize" }
         );
         await locker.waitForDeployment();
