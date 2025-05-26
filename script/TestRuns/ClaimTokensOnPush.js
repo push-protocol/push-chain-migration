@@ -32,11 +32,11 @@ async function main() {
     // Uncomment the following lines to test the instant release phase
 
     // Instant release phase
-    // for (const { address, amount, id } of claims) {
-    //     const proof = getProof(address, amount, id, claims);
+    // for (const { address, amount } of claims) {
+    //     const proof = getProof(address, amount, claims);
 
     //     const before = await ethers.provider.getBalance(address);
-    //     const tx = await release.releaseInstant(address, amount, id, proof);
+    //     const tx = await release.releaseInstant(address, amount, proof);
     //     await tx.wait();
     //     const after = await ethers.provider.getBalance(address);
 
@@ -51,12 +51,12 @@ async function main() {
     // }
 
     // Vested release phase
-    for (const { address, amount, id } of claims) {
-        const proof = getProof(address, amount, id, claims);
+    for (const { address, amount } of claims) {
+        const proof = getProof(address, amount, claims);
 
         const before = await ethers.provider.getBalance(address);
         try {
-            const tx = await release.releaseVested(address, amount, id);
+            const tx = await release.releaseVested(address, amount);
             await tx.wait();
             const after = await ethers.provider.getBalance(address);
 

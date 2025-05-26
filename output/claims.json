@@ -1,52 +1,42 @@
 [
   {
-    "address": "0x396472cFabeA7387fDbA796114BFea8fD173fc04",
-    "amount": "100000000000000000000",
-    "id": "0"
+    "address": "0x99FFc31247a0F85b653027De61C92cAA710e2b90",
+    "amount": "600000000000000000000"
   },
   {
-    "address": "0x19564b9415e994116E6f7338B8D4874c7F5c878C",
-    "amount": "100000000000000000000",
-    "id": "1"
+    "address": "0x29516aB2463bD61cB755f99A10767DB9FE387C87",
+    "amount": "600000000000000000000"
   },
   {
-    "address": "0xf600FE155F2Cad0E0Db06bf3665b8f15dB13B9fd",
-    "amount": "100000000000000000000",
-    "id": "2"
+    "address": "0xA02f00A31E81fAe2335c9CDF1197336282A77451",
+    "amount": "600000000000000000000"
   },
   {
-    "address": "0xCbF5b9C33f04C53CCba292Df9Dd64F11Faf1E3b2",
-    "amount": "100000000000000000000",
-    "id": "3"
+    "address": "0xdB4278ea7eDFf8BBB9B5BF32a7d1690dc7e99832",
+    "amount": "600000000000000000000"
   },
   {
-    "address": "0x5Cf17876bf9BFcc425aA587B9B0D8816a79d0E27",
-    "amount": "100000000000000000000",
-    "id": "4"
+    "address": "0x4FD6BB8Ec95594eafe91a40ce54c350bAc3A657F",
+    "amount": "600000000000000000000"
   },
   {
-    "address": "0x37584A0b04D6d3911032d1CBb77cf14D6FD1F9b3",
-    "amount": "100000000000000000000",
-    "id": "5"
+    "address": "0xCF29b29F91025a71879AbE61494B09f669E1679A",
+    "amount": "600000000000000000000"
   },
   {
-    "address": "0x0563818B72Ace49361767a3B93a4F2952D0cd106",
-    "amount": "100000000000000000000",
-    "id": "6"
+    "address": "0xe0e71Bf05B98146F9f6d3df0537a160130f1D582",
+    "amount": "600000000000000000000"
   },
   {
-    "address": "0xF80bcc6F7B5A44c9730347cA8ae8A930f94E006B",
-    "amount": "100000000000000000000",
-    "id": "7"
+    "address": "0x2Af85fbB20D864Bd8EAE14720302205C30813E5a",
+    "amount": "600000000000000000000"
   },
   {
-    "address": "0x37A1A9aCd16f92Ed23b08042554047815065d165",
-    "amount": "100000000000000000000",
-    "id": "8"
+    "address": "0x1A238b0F00Fd888E32c78CCE6f869f9f146445f5",
+    "amount": "600000000000000000000"
   },
   {
-    "address": "0xd20C7F8835694f3724D2667961570398d609ec19",
-    "amount": "100000000000000000000",
-    "id": "9"
+    "address": "0x970cB879473969bBf5E80A6c5320a5e2709a3F09",
+    "amount": "600000000000000000000"
   }
 ]

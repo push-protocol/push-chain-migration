@@ -48,14 +48,29 @@ describe("Migration Merkle Test", function () {
         }
 
         const events = await locker.queryFilter(locker.filters.Locked());
-        claims = events.map(e => ({
-            address: e.args.recipient,
-            amount: e.args.amount,
-            id: e.args.id,
+        const addressMap = new Map();
+
+        events.forEach(e => {
+            const address = e.args.recipient;
+            const amount = e.args.amount;
+
+            if (addressMap.has(address)) {
+                // Add to existing amount
+                addressMap.set(address, addressMap.get(address) + amount);
+            } else {
+                // First occurrence of this address
+                addressMap.set(address, amount);
+            }
+        });
+
+        // Convert back to array format
+        claims = Array.from(addressMap.entries()).map(([address, amount]) => ({
+            address,
+            amount
         }));
 
-        const leaves = claims.map(({ address, amount, id }) =>
-            ethers.solidityPackedKeccak256(["address", "uint256", "uint256"], [address, amount, id])
+        const leaves = claims.map(({ address, amount }) =>
+            ethers.solidityPackedKeccak256(["address", "uint256"], [address, amount])
         );
 
         tree = new MerkleTree(leaves, keccak256, { sortPairs: true });
@@ -70,16 +85,16 @@ describe("Migration Merkle Test", function () {
 
     it("✅ allows all users to claim with valid proof and receive correct instant amount", async () => {
         for (const userClaim of claims) {
-            const leaf = ethers.solidityPackedKeccak256(["address", "uint256", "uint256"], [userClaim.address, userClaim.amount, userClaim.id]);
+            const leaf = ethers.solidityPackedKeccak256(["address", "uint256"], [userClaim.address, userClaim.amount]);
             const proof = tree.getHexProof(leaf);
 
             const beforeBalance = await ethers.provider.getBalance(userClaim.address);
             await expect(
-                release.connect(owner).releaseInstant(userClaim.address, userClaim.amount, userClaim.id, proof)
+                release.connect(owner).releaseInstant(userClaim.address, userClaim.amount, proof)
             ).to.emit(release, "ReleasedInstant");
 
             const afterBalance = await ethers.provider.getBalance(userClaim.address);
-            const expected = (userClaim.amount * 75n) /10n;
+            const expected = (userClaim.amount * 75n) / 10n;
             const actual = afterBalance - beforeBalance;
 
             expect(actual).to.equal(expected);
@@ -87,59 +102,59 @@ describe("Migration Merkle Test", function () {
     });
 
     it("❌ fails if proof is invalid", async () => {
-        const badLeaf = ethers.solidityPackedKeccak256(["address", "uint256", "uint256"], [user1.address, ethers.parseEther("999"), 9]);
+        const badLeaf = ethers.solidityPackedKeccak256(["address", "uint256"], [user1.address, ethers.parseEther("999")]);
         const badProof = tree.getHexProof(badLeaf);
 
         await expect(
-            release.releaseInstant(user1.address, ethers.parseEther("999"), 9, badProof)
+            release.releaseInstant(user1.address, ethers.parseEther("999"), badProof)
         ).to.be.revertedWith("Not Whitelisted or already Claimed");
     });
 
     it("❌ prevents double claim", async () => {
         const userClaim = claims[0];
-        const leaf = ethers.solidityPackedKeccak256(["address", "uint256", "uint256"], [userClaim.address, userClaim.amount, userClaim.id]);
+        const leaf = ethers.solidityPackedKeccak256(["address", "uint256"], [userClaim.address, userClaim.amount]);
         const proof = tree.getHexProof(leaf);
 
-        await release.releaseInstant(userClaim.address, userClaim.amount, userClaim.id, proof);
+        await release.releaseInstant(userClaim.address, userClaim.amount, proof);
 
         await expect(
-            release.releaseInstant(userClaim.address, userClaim.amount, userClaim.id, proof)
+            release.releaseInstant(userClaim.address, userClaim.amount, proof)
         ).to.be.revertedWith("Not Whitelisted or already Claimed");
     });
 
     it("❌ rejects claims with correct address but wrong amount", async () => {
         const userClaim = claims[1];
         const wrongAmount = ethers.parseEther("1");
-        const leaf = ethers.solidityPackedKeccak256(["address", "uint256", "uint256"], [userClaim.address, wrongAmount, userClaim.id]);
+        const leaf = ethers.solidityPackedKeccak256(["address", "uint256"], [userClaim.address, wrongAmount]);
         const proof = tree.getHexProof(leaf);
 
         await expect(
-            release.releaseInstant(userClaim.address, wrongAmount, userClaim.id, proof)
+            release.releaseInstant(userClaim.address, wrongAmount, proof)
         ).to.be.revertedWith("Not Whitelisted or already Claimed");
     });
 
     it("❌ rejects claims with correct amount but wrong address", async () => {
         const userClaim = claims[2];
         const wrongAddress = additionalUsers[0].address;
-        const leaf = ethers.solidityPackedKeccak256(["address", "uint256", "uint256"], [wrongAddress, userClaim.amount, userClaim.id]);
+        const leaf = ethers.solidityPackedKeccak256(["address", "uint256"], [wrongAddress, userClaim.amount]);
         const proof = tree.getHexProof(leaf);
 
         await expect(
-            release.releaseInstant(wrongAddress, userClaim.amount, userClaim.id, proof)
+            release.releaseInstant(wrongAddress, userClaim.amount, proof)
         ).to.be.revertedWith("Not Whitelisted or already Claimed");
     });
 
     it("✅ allows vested claim after instant and validates correct vested amount", async () => {
         const userClaim = claims[3];
-        const leaf = ethers.solidityPackedKeccak256(["address", "uint256", "uint256"], [userClaim.address, userClaim.amount, userClaim.id]);
+        const leaf = ethers.solidityPackedKeccak256(["address", "uint256"], [userClaim.address, userClaim.amount]);
         const proof = tree.getHexProof(leaf);
 
         const before = await ethers.provider.getBalance(userClaim.address);
-        await release.connect(owner).releaseInstant(userClaim.address, userClaim.amount, userClaim.id, proof);
+        await release.connect(owner).releaseInstant(userClaim.address, userClaim.amount, proof);
         await ethers.provider.send("evm_increaseTime", [90 * 24 * 60 * 60]);
         await ethers.provider.send("evm_mine");
 
-        await release.connect(owner).releaseVested(userClaim.address, userClaim.amount, userClaim.id);
+        await release.connect(owner).releaseVested(userClaim.address, userClaim.amount);
         const after = await ethers.provider.getBalance(userClaim.address);
 
         const expected = userClaim.amount * 15n; // 5x + 10x
@@ -149,34 +164,34 @@ describe("Migration Merkle Test", function () {
 
     it("❌ fails if vested is called before instant", async () => {
         const userClaim = claims[4];
-        const leaf = ethers.solidityPackedKeccak256(["address", "uint256", "uint256"], [userClaim.address, userClaim.amount, userClaim.id]);
+        const leaf = ethers.solidityPackedKeccak256(["address", "uint256"], [userClaim.address, userClaim.amount]);
         const proof = tree.getHexProof(leaf);
 
         await expect(
-            release.connect(owner).releaseVested(userClaim.address, userClaim.amount, userClaim.id)
+            release.connect(owner).releaseVested(userClaim.address, userClaim.amount)
         ).to.be.revertedWith("Not Whitelisted or Not Vested");
     });
 
     // Simple test for the totalReleased counter
     it("✅ tracks totalReleased correctly", async () => {
         const userClaim = claims[0];
-        const leaf = ethers.solidityPackedKeccak256(["address", "uint256", "uint256"], [userClaim.address, userClaim.amount, userClaim.id]);
+        const leaf = ethers.solidityPackedKeccak256(["address", "uint256"], [userClaim.address, userClaim.amount]);
         const proof = tree.getHexProof(leaf);
 
         const beforeTotal = await release.totalReleased();
 
         // Do instant release
-        await release.connect(owner).releaseInstant(userClaim.address, userClaim.amount, userClaim.id, proof);
+        await release.connect(owner).releaseInstant(userClaim.address, userClaim.amount, proof);
 
         const afterInstantTotal = await release.totalReleased();
-        expect(afterInstantTotal - beforeTotal).to.equal((userClaim.amount * 75n)/10n);
+        expect(afterInstantTotal - beforeTotal).to.equal((userClaim.amount * 75n) / 10n);
 
         // Wait for vesting period
         await ethers.provider.send("evm_increaseTime", [90 * 24 * 60 * 60]);
         await ethers.provider.send("evm_mine");
 
         // Do vested release
-        await release.connect(owner).releaseVested(userClaim.address, userClaim.amount, userClaim.id);
+        await release.connect(owner).releaseVested(userClaim.address, userClaim.amount);
 
         const afterVestedTotal = await release.totalReleased();
         expect(afterVestedTotal - afterInstantTotal).to.equal((userClaim.amount * 75n) / 10n);

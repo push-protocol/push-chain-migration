@@ -92,7 +92,6 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable {
     /// @notice Allows users to release their tokens instantly
     /// @param _recipient The address of the recipient
     /// @param _amount The amount of tokens to release
-    /// @param _id The unique identifier for the release
     /// @param _merkleProof The Merkle proof for the recipient
     /// @dev checks if the recipient is whitelisted and has not claimed before
     /// @dev calculates the instant amount based on the INSTANT_RATIO
@@ -103,12 +102,11 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable {
     function releaseInstant(
         address _recipient,
         uint _amount,
-        uint _id,
         bytes32[] calldata _merkleProof
     ) external onlyUnlocked {
-        bytes32 leaf = keccak256(abi.encodePacked(_recipient, _amount, _id));
+        bytes32 leaf = keccak256(abi.encodePacked(_recipient, _amount));
         require(
-            verifyAddress(_recipient, _amount, _id, _merkleProof) &&
+            verifyAddress(_recipient, _amount, _merkleProof) &&
                 instantClaimTime[leaf] == 0,
             "Not Whitelisted or already Claimed"
         );
@@ -124,7 +122,6 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable {
     /// @notice Allows users to release their vested tokens
     /// @param _recipient The address of the recipient
     /// @param _amount The amount of tokens to release
-    /// @param _id The unique identifier for the release
     /// @dev checks if the recipient is whitelisted and has not claimed before
     /// @dev checks if the vesting period has passed
     /// @dev calculates the vested amount based on the VESTING_RATIO
@@ -134,10 +131,9 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable {
 
     function releaseVested(
         address _recipient,
-        uint _amount,
-        uint _id
-    ) external onlyUnlocked {
-        bytes32 leaf = keccak256(abi.encodePacked(_recipient, _amount, _id));
+        uint _amount
+            ) external onlyUnlocked {
+        bytes32 leaf = keccak256(abi.encodePacked(_recipient, _amount));
         if (claimedvested[leaf] == true) {
             revert("Already Claimed");
         }
@@ -167,10 +163,9 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable {
     function verifyAddress(
         address recipient,
         uint amount,
-        uint _id,
         bytes32[] calldata _merkleProof
     ) private view returns (bool) {
-        bytes32 leaf = keccak256(abi.encodePacked(recipient, amount, _id));
+        bytes32 leaf = keccak256(abi.encodePacked(recipient, amount));
         return MerkleProof.verify(_merkleProof, merkleRoot, leaf);
     }
 

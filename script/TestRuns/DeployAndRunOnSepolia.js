@@ -6,6 +6,8 @@ async function main() {
   const TOKEN_ADDRESS = "0x37c779a1564DCc0e3914aB130e0e787d93e21804"; // PUSH Token
   const amountToMint = ethers.parseUnits("1000", 18); // amount each user gets
   const amountToLock = ethers.parseUnits("100", 18);  // amount each user locks
+  const amountToLock2 = ethers.parseUnits("200", 18);  // amount each user locks
+  const amountToLock3 = ethers.parseUnits("300", 18);  // amount each user locks
   const usersCount = 10;
 
   const [deployer] = await ethers.getSigners();
@@ -18,6 +20,7 @@ async function main() {
   // Deploy MigrationLocker
   const MigrationLocker = await ethers.getContractFactory("MigrationLocker");
   console.log("Deploying MigrationLocker with transparent proxy...");
+  // const locker = MigrationLocker.attach("0x5f4A632526a907003879dAd557dBdcf624EBe992");
   const locker = await upgrades.deployProxy(
     MigrationLocker,
     [deployer.address],
@@ -49,11 +52,17 @@ async function main() {
     const mintTx = await userPush.mint(amountToMint);
     await mintTx.wait();
 
-    const approveTx = await userPush.approve(await locker.getAddress(), amountToLock);
+    const approveTx = await userPush.approve(await locker.getAddress(), amountToLock + amountToLock2 + amountToLock3);
     await approveTx.wait();
 
     const lockTx = await userLocker.lock(amountToLock, user.address);
     await lockTx.wait();
+
+    const lockTx2 = await userLocker.lock(amountToLock2, user.address);
+    await lockTx2.wait();
+
+    const lockTx3 = await userLocker.lock(amountToLock3, user.address);
+    await lockTx3.wait();
 
     console.log(`🔐 ${user.address} locked ${ethers.formatEther(amountToLock)} PUSH`);
   }
