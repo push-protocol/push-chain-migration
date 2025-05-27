@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: SEE LICENSE IN LICENSE
-pragma solidity 0.8.29;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
 
 import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
@@ -8,8 +8,9 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @title MigrationRelease
-/// @author Push Chain
+/// @author Push Protocol (https://push.org)
 /// @notice Allows users to claim their tokens based on a Merkle tree proof
+
 contract MigrationRelease is Initializable, Ownable2StepUpgradeable {
     using SafeERC20 for IERC20;
     event ReleasedInstant(
