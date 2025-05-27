@@ -16,13 +16,12 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable {
     /// @param id The unique identifier for the lock
     event Locked(address recipient, uint amount, uint indexed id);
 
-    address public constant PUSH_TOKEN =
-        0x37c779a1564DCc0e3914aB130e0e787d93e21804;
+    address public immutable PUSH_TOKEN;
 
     bool public isMigrationPause;
 
     uint counter;
-    maapping(address => uint) public lockedAmount;
+    mapping(address => uint) public lockedAmount;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -31,10 +30,11 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable {
 
     /// @notice Initializes the contract instead of constructor
     /// @param initialOwner The address of the admin
-    function initialize(address initialOwner) public initializer {
+    function initialize(address initialOwner, address pushToken) public initializer {
         require(initialOwner != address(0), "Invalid owner");
         __Ownable2Step_init();
         __Ownable_init(initialOwner);
+        PUSH_TOKEN = pushToken;
     }
 
     modifier onlyUnlocked() {
