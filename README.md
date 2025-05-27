@@ -67,14 +67,14 @@ The MigrationRelease contract manages the release of migrated tokens to eligible
 **Key Features:**
 - Two-phase token release (instant + vested)
 - Merkle Tree-based verification for gas efficiency
-- Configurable allocation ratios for instant and vested portions
+- Fixed allocation ratios for instant and vested portions
 - Fair and transparent distribution mechanism
 - Fund recovery safety mechanism
 
 **Release Model:**
-- **Instant Release**: 75% of the locked amount is immediately available
-- **Vested Release**: Additional 75% of the locked amount is available after a 90-day vesting period
-- Total migration ratio: 1:1.5 (locked:received)
+- **Instant Release**: 50% of the locked amount is immediately available
+- **Vested Release**: Additional 50% of the locked amount is available after a 90-day vesting period
+- Total migration ratio: 1:15 (locked:received)
 
 **Main Functions:**
 - `releaseInstant(address _recipient, uint _amount, uint _id, bytes32[] calldata _merkleProof)`: Claims instant portion

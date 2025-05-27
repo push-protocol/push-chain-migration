@@ -8,7 +8,7 @@ async function main() {
     const claims = JSON.parse(fs.readFileSync(claimsPath, "utf8"));
 
     const [deployer] = await ethers.getSigners();
-    const RELEASE_ADDRESS = "0x7121D0Bf677847cA41601838824f39a7d5146310"; // Replace with actual address
+    const RELEASE_ADDRESS = "0xE6f6f9fA92e6d8A974Ec79a69cD8D97f7dEC15E7"; // Replace with actual address
 
     const Release = await ethers.getContractFactory("MigrationRelease");
     const release = Release.attach(RELEASE_ADDRESS);
@@ -23,10 +23,11 @@ async function main() {
     console.log(`✅ Funded with ${ethers.formatEther(totalRequired)} ETH`);
 
     // Set Merkle root
-    const root = getRoot(claims);
-    const tx = await release.setMerkleRoot(root);
-    await tx.wait();
-    console.log("📌 Merkle root updated:", root);
+    // console.log("📌 Merkle root updated:");
+    // const root = getRoot(claims);
+    // const tx = await release.setMerkleRoot(root);
+    // await tx.wait();
+    // console.log("📌 Merkle root updated:", root);
 
 
     // Uncomment the following lines to test the instant release phase
@@ -41,7 +42,7 @@ async function main() {
     //     const after = await ethers.provider.getBalance(address);
 
     //     const received = after - before;
-    //     const expected = BigInt(amount) * 5n;
+    //     const expected = (BigInt(amount) * 75n) / 10n;
 
     //     console.log(`💸 ${address} received instant ${ethers.formatEther(received)} ETH`);
 
@@ -61,7 +62,7 @@ async function main() {
             const after = await ethers.provider.getBalance(address);
 
             const received = after - before;
-            const expected = BigInt(amount) * 10n;
+            const expected = (BigInt(amount) *  75n) / 10n;
 
             console.log(`💰 ${address} received vested ${ethers.formatEther(received)} ETH`);
 
