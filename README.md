@@ -71,6 +71,12 @@ The MigrationRelease contract manages the release of migrated tokens to eligible
 - Fair and transparent distribution mechanism
 - Fund recovery safety mechanism
 
+## Important Constants
+
+- `VESTING_PERIOD`: 90 days
+- `INSTANT_RATIO`: 75 (interpreted as 7.5x)
+- `VESTING_RATIO`: 75 (interpreted as 7.5x)
+
 **Release Model:**
 - **Instant Release**: 50% of the locked amount is immediately available
 - **Vested Release**: Additional 50% of the locked amount is available after a 90-day vesting period
@@ -197,39 +203,7 @@ node script/utils/fetchAndStoreEvents.js
 ```shell
 node script/utils/getRoot.js 
 ```
-
-## Testing Scenarios
-
-The test suite includes comprehensive tests for various scenarios:
-
-1. Successful token locking and claiming
-2. Invalid proof rejection
-3. Double claim prevention
-4. Incorrect parameter verification
-5. Vesting period enforcement
-6. Total released amount tracking
-7. Administrative functions like burning and fund recovery
-
-## Audit Scope
-
-When auditing this codebase, please focus on:
-
-1. **Token Lock Security**: Ensuring tokens cannot be locked or withdrawn improperly
-2. **Merkle Proof Verification**: Validating the integrity of the Merkle Tree implementation
-3. **Claim Double-Spend**: Verifying that double-claims are properly prevented
-4. **Vesting Mechanics**: Confirming the vesting period and amount calculations are correct
-5. **Access Control**: Validating owner-only functions are properly secured
-6. **Fund Safety**: Ensuring funds cannot be drained or lost due to implementation errors
-7. **Upgradeability Concerns**: Reviewing the proxy pattern implementation for security issues
-8. **Gas Optimization**: Identifying potential gas optimizations without compromising security
-
-**Note: Pay special attention to the scripts that generate the Merkle tree as they are crucial for the security of the entire system.**
-
-## Important Constants
-
-- `VESTING_PERIOD`: 90 days
-- `INSTANT_RATIO`: 75 (interpreted as 7.5x)
-- `VESTING_RATIO`: 75 (interpreted as 7.5x)
+---
 
 ## License
 
