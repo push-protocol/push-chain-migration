@@ -30,7 +30,7 @@ describe("Migration Merkle Test", function () {
             { kind: "transparent", initializer: "initialize" }
         );
         await locker.waitForDeployment();
-        await locker.setToken(pushToken.target);
+        // await locker.setToken(pushToken.target);
 
         await pushToken.connect(user1).approve(locker.target, ethers.parseEther("100"));
         await locker.connect(user1).lock(ethers.parseEther("100"), user1.address);

@@ -15,13 +15,9 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable {
     /// @param amount The amount of tokens locked
     event Locked(address recipient, uint amount);
 
-    // address public constant PUSH_TOKEN =
-    //     0x37c779a1564DCc0e3914aB130e0e787d93e21804;
-address public PUSH_TOKEN;
+    address public constant PUSH_TOKEN =
+        0x37c779a1564DCc0e3914aB130e0e787d93e21804;
 
-    function setToken(address _token) external {
-        PUSH_TOKEN = _token;
-    }
     bool public isMigrationPause;
 
     uint counter;
