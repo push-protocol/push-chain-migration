@@ -67,14 +67,14 @@ The MigrationRelease contract manages the release of migrated tokens to eligible
 **Key Features:**
 - Two-phase token release (instant + vested)
 - Merkle Tree-based verification for gas efficiency
-- Configurable allocation ratios for instant and vested portions
+- Fixed allocation ratios for instant and vested portions
 - Fair and transparent distribution mechanism
 - Fund recovery safety mechanism
 
 **Release Model:**
-- **Instant Release**: 75% of the locked amount is immediately available
-- **Vested Release**: Additional 75% of the locked amount is available after a 90-day vesting period
-- Total migration ratio: 1:1.5 (locked:received)
+- **Instant Release**: 50% of the locked amount is immediately available
+- **Vested Release**: Additional 50% of the locked amount is available after a 90-day vesting period
+- Total migration ratio: 1:15 (locked:received)
 
 **Main Functions:**
 - `releaseInstant(address _recipient, uint _amount, uint _id, bytes32[] calldata _merkleProof)`: Claims instant portion
@@ -147,26 +147,42 @@ The project includes several utility scripts for managing the migration process:
 ### Building the Project
 
 ```shell
-forge build
+npx hardhat compile
 ```
 
 ### Testing the Project
 
 ```shell
-forge test
+npx hardhat test
 ```
 
-### Formatting
+### Test dry run on testnet
+Deploying and locking on sepolia
+```shell
+npx hardhat run script/TestRuns/DeployAndRunOnSepolia.js --network sepolia 
+```
+
+Fetching the events from sepolia
+```shell
+npx hardhat run script/utils/fetchAndStoreEvents.js --network sepolia
+```
+
+Once fetched, deploy on local Push chain (Push chain should be running, and the account should have funds)
+```shell
+npx hardhat run script/Deployments/DeployRelease.js --network pushlocalnet 
+```
+
+Update address in `ClaimTokensOnPush.js` and run. 
 
 ```shell
-forge fmt
+npx hardhat run script/TestRuns/ClaimTokensOnPush.js  --network pushlocalnet
 ```
 
 ### Deploying
 
 ```shell
-forge script script/Deployments/DeployLocker.js
-forge script script/Deployments/DeployRelease.js
+npx hardhat run script/Deployments/DeployLocker.js
+npx hardhat run script/Deployments/DeployRelease.js
 ```
 
 ### Generating Merkle Root
@@ -175,6 +191,11 @@ After users have locked their tokens:
 
 ```shell
 node script/utils/fetchAndStoreEvents.js
+```
+
+
+```shell
+node script/utils/getRoot.js 
 ```
 
 ## Testing Scenarios
@@ -209,18 +230,4 @@ When auditing this codebase, please focus on:
 - `VESTING_PERIOD`: 90 days
 - `INSTANT_RATIO`: 75 (interpreted as 7.5x)
 - `VESTING_RATIO`: 75 (interpreted as 7.5x)
-
-## Development Environment
-
-Always clean the cache before running scripts or tests:
-
-```shell
-forge clean
-```
-
-Or add the `--force` flag with commands:
-
-```shell
-forge test --force
-```
 
