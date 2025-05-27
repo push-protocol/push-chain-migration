@@ -1,5 +1,13 @@
 {
-  "name": "hardhat-project",
+  "name": "push-token-migration",
+  "version": "1.0.0",
+  "description": "Migration system for PUSH tokens from Ethereum to Push Chain",
+  "license": "MIT",
+  "author": "Push Protocol (https://push.org)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/push-protocol/push-migration"
+  },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@openzeppelin/hardhat-upgrades": "^3.9.0",

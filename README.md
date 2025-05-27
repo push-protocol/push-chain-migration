@@ -231,3 +231,9 @@ When auditing this codebase, please focus on:
 - `INSTANT_RATIO`: 75 (interpreted as 7.5x)
 - `VESTING_RATIO`: 75 (interpreted as 7.5x)
 
+## License
+
+This project is licensed under the MIT License with Attribution - see the [LICENSE](LICENSE) file for details.
+
+Any use of this code must include visible attribution to Push Protocol (https://push.org).
+

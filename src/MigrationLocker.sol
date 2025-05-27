@@ -1,13 +1,16 @@
-// SPDX-License-Identifier: SEE LICENSE IN LICENSE
-pragma solidity 0.8.29;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
 
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {IPUSH} from "./Mocks/IPush.sol";
+import {IEPNS} from "./Mocks/IPush.sol";
 
 /// @title MigrationLocker
-/// @author Push Chain
+/// @author Push Protocol
 /// @notice Allows users to lock their Push tokens for migration
+
 contract MigrationLocker is Initializable, Ownable2StepUpgradeable {
 
     /// @notice Emitted when a user locks their tokens
@@ -66,16 +69,16 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable {
         }
         lockedAmount[msg.sender] += _amount;
 
-        IPUSH(PUSH_TOKEN).transferFrom(msg.sender, address(this), _amount);
+        IEPNS(PUSH_TOKEN).transferFrom(msg.sender, address(this), _amount);
         emit Locked(_recipient, _amount, counter++);
     }
 
     /// @notice Allows the owner to burn a specified amount of tokens
     /// @dev The function can only be called by the contract owner
     /// @param _amount The amount of tokens to burn
-    /// @dev The function calls the burn function of the IPUSH contract to burn the specified amount of tokens
+    /// @dev The function calls the burn function of the IEPNS contract to burn the specified amount of tokens
     function burn(uint _amount) external onlyOwner onlyUnlocked {
-        IPUSH(PUSH_TOKEN).burn(_amount);
+        IEPNS(PUSH_TOKEN).burn(_amount);
     }
 
     function recoverFunds(
@@ -86,9 +89,9 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable {
         require(_to != address(0), "Invalid recipient");
 
         require(
-            _amount > 0 && _amount <= IPUSH(_token).balanceOf(address(this)),
+            _amount > 0 && _amount <= IEPNS(_token).balanceOf(address(this)),
             "Invalid amount"
         );
-        IPUSH(_token).transfer(_to, _amount);
+        IEPNS(_token).transfer(_to, _amount);
     }
 }
