@@ -3,7 +3,7 @@ pragma solidity 0.8.29;
 
 import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {IPUSH} from "./Mocks/IPush.sol";
+import {IPUSH} from "./interfaces/IPUSH.sol";
 
 /// @title MigrationLocker
 /// @author Push Chain
@@ -70,7 +70,7 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable {
     /// @notice Allows the owner to burn a specified amount of tokens
     /// @dev The function can only be called by the contract owner
     /// @param _amount The amount of tokens to burn
-    /// @dev The function calls the burn function of the IPUSH contract to burn the specified amount of tokens
+    /// @dev The function calls the burn function of the IPush contract to burn the specified amount of tokens
     function burn(uint _amount) external onlyOwner onlyUnlocked {
         IPUSH(PUSH_TOKEN).burn(_amount);
     }
