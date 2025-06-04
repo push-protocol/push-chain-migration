@@ -2,6 +2,7 @@
 pragma solidity 0.8.29;
 
 import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
+import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -10,7 +11,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /// @title MigrationRelease
 /// @author Push Chain
 /// @notice Allows users to claim their tokens based on a Merkle tree proof
-contract MigrationRelease is Initializable, Ownable2StepUpgradeable {
+contract MigrationRelease is Initializable, Ownable2StepUpgradeable, PausableUpgradeable {
     using SafeERC20 for IERC20;
     event ReleasedInstant(
         address indexed recipient,
@@ -39,9 +40,9 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable {
     bool public isClaimPaused;
 
 
-    mapping(bytes32 => uint) instantClaimTime;
+    mapping(bytes32 => uint) public instantClaimTime;
 
-    mapping(bytes32 => bool) claimedvested;
+    mapping(bytes32 => bool) public claimedvested;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -55,23 +56,19 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable {
         __Ownable_init(initialOwner);
     }
 
-        modifier onlyUnlocked() {
-        if (isClaimPaused) {
-            revert("Contract is locked");
-        }
-        _;
+    /// @dev admin can pause the contract
+    function pause() external onlyOwner {
+        _pause();
     }
-
-    /// @dev admin can lock the contract
-    function setToggleLock() external onlyOwner {
-        isClaimPaused = !isClaimPaused;
+    function unpause() external onlyOwner {
+        _unpause();
     }
 
     /// @notice Sets the Merkle root for the contract
     /// @param _merkleRoot The new Merkle root
     /// @dev Only the contract owner can call this function
     /// @dev The function checks if the new Merkle root is valid and not equal to the current root
-    function setMerkleRoot(bytes32 _merkleRoot) external onlyOwner  {
+    function setMerkleRoot(bytes32 _merkleRoot) external onlyOwner whenNotPaused {
         if (_merkleRoot == bytes32(0) || _merkleRoot == merkleRoot) {
             revert("Invalid Merkle Root");
         }
@@ -83,7 +80,7 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable {
     /// @dev The function can only be called by the contract owner
     /// @dev The function requires that the amount sent is greater than zero
     /// @dev The function emits a FundsAdded event with the amount and timestamp
-    function addFunds() external payable onlyOwner {
+    function addFunds() external payable onlyOwner whenNotPaused {
         // Logic to add funds to the contract
         require(msg.value > 0, "No funds sent");
         emit FundsAdded(msg.value, block.timestamp);
@@ -103,7 +100,7 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable {
         address _recipient,
         uint _amount,
         bytes32[] calldata _merkleProof
-    ) external onlyUnlocked {
+    ) external whenNotPaused {
         bytes32 leaf = keccak256(abi.encodePacked(_recipient, _amount));
         require(
             verifyAddress(_recipient, _amount, _merkleProof) &&
@@ -132,7 +129,7 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable {
     function releaseVested(
         address _recipient,
         uint _amount
-            ) external onlyUnlocked {
+            ) external whenNotPaused {
         bytes32 leaf = keccak256(abi.encodePacked(_recipient, _amount));
         if (claimedvested[leaf] == true) {
             revert("Already Claimed");
@@ -173,7 +170,7 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable {
         address _token,
         address _to,
         uint _amount
-    ) external onlyOwner {
+    ) external onlyOwner whenNotPaused {
         require(_to != address(0), "Invalid recipient");
 
         if (_token == address(0)) {
