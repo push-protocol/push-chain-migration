@@ -1,5 +1,5 @@
 const whitelist = require("../../output/claims.json");
-const { getProof, verify } = require("./merkle");
+const { getProof, verify } = require("../utils/merkle");
 
 for (const user of whitelist) {
   const proof = getProof(user.address, user.amount, whitelist);
