@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity 0.8.29;
 
+import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {IPUSH} from "./interfaces/IPUSH.sol";
@@ -8,7 +9,7 @@ import {IPUSH} from "./interfaces/IPUSH.sol";
 /// @title MigrationLocker
 /// @author Push Chain
 /// @notice Allows users to lock their Push tokens for migration
-contract MigrationLocker is Initializable, Ownable2StepUpgradeable {
+contract MigrationLocker is Initializable, Ownable2StepUpgradeable, PausableUpgradeable {
 
     /// @notice Emitted when a user locks their tokens
     /// @param recipient The address of the recipient
@@ -16,11 +17,7 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable {
     event Locked(address recipient, uint amount);
 
     address public constant PUSH_TOKEN =
-        0x37c779a1564DCc0e3914aB130e0e787d93e21804;
-
-    bool public isMigrationPause;
-
-    uint counter;
+        0xf418588522d5dd018b425E472991E52EBBeEEEEE;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -33,19 +30,18 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable {
         require(initialOwner != address(0), "Invalid owner");
         __Ownable2Step_init();
         __Ownable_init(initialOwner);
+        __Pausable_init();
     }
 
-    modifier onlyUnlocked() {
-        if (isMigrationPause) {
-            revert("Contract is locked");
-        }
-        _;
+    /// Pauseable Features
+    function pause() external onlyOwner {
+        _pause();
     }
 
-    /// @dev admin can lock the contract
-    function setToggleLock() external onlyOwner {
-        isMigrationPause = !isMigrationPause;
+    function unpause() external onlyOwner {
+        _unpause();
     }
+    
 
     /// @notice Allows users to lock their tokens for migration
     /// @param _amount The amount of tokens to lock
@@ -53,8 +49,7 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable {
     /// @dev The recipient address cannot be zero
     /// @dev The function transfers the specified amount of tokens from the user to the contract
     /// @dev Emits a Locked event with the recipient address, amount, and a unique identifier
-    /// @dev The function increments the counter to ensure unique identifiers for each lock
-    function lock(uint _amount, address _recipient) external onlyUnlocked {
+    function lock(uint _amount, address _recipient) external whenNotPaused {
         uint codeLength;
         assembly {
             codeLength := extcodesize(_recipient)
@@ -71,7 +66,7 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable {
     /// @dev The function can only be called by the contract owner
     /// @param _amount The amount of tokens to burn
     /// @dev The function calls the burn function of the IPush contract to burn the specified amount of tokens
-    function burn(uint _amount) external onlyOwner onlyUnlocked {
+    function burn(uint _amount) external onlyOwner whenNotPaused {
         IPUSH(PUSH_TOKEN).burn(_amount);
     }
 
@@ -79,7 +74,7 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable {
         address _token,
         address _to,
         uint _amount
-    ) external onlyOwner onlyUnlocked {
+    ) external onlyOwner whenNotPaused {
         require(_to != address(0), "Invalid recipient");
 
         require(
