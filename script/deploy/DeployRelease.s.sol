@@ -41,23 +41,5 @@ contract DeployReleaseScript is Script {
         console.log("MigrationRelease proxy deployed at:", proxyAddress);
         
         vm.stopBroadcast();
-        
-        string memory deploymentData = vm.toString(block.timestamp);
-        deploymentData = string.concat(deploymentData, ",", vm.toString(block.number));
-        deploymentData = string.concat(deploymentData, ",", vm.toString(block.chainid));
-        deploymentData = string.concat(deploymentData, ",implementation,", vm.toString(address(implementation)));
-        deploymentData = string.concat(deploymentData, ",proxy_admin,", vm.toString(address(proxyAdmin)));
-        deploymentData = string.concat(deploymentData, ",proxy,", vm.toString(proxyAddress));
-        
-        // Create the deployment file
-        string memory fileName = string.concat(
-            "deployments/release_", 
-            vm.toString(block.chainid), 
-            "_", 
-            vm.toString(block.timestamp), 
-            ".csv"
-        );
-        vm.writeFile(fileName, deploymentData);
-        console.log("Deployment data saved to:", fileName);
     }
 } 

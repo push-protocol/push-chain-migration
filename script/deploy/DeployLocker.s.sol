@@ -48,16 +48,5 @@ contract DeployLockerScript is Script {
         console.log("For interaction, use proxy address:", proxyAddress);
         
         vm.stopBroadcast();
-        
-        string memory deploymentData = vm.toString(block.timestamp);
-        deploymentData = string.concat(deploymentData, ",", vm.toString(block.number));
-        deploymentData = string.concat(deploymentData, ",", vm.toString(block.chainid));
-        deploymentData = string.concat(deploymentData, ",implementation,", vm.toString(address(implementation)));
-        deploymentData = string.concat(deploymentData, ",proxy_admin,", vm.toString(address(proxyAdmin)));
-        deploymentData = string.concat(deploymentData, ",proxy,", vm.toString(proxyAddress));
-        
-        string memory fileName = string.concat("deployments/locker_", vm.toString(block.chainid), "_", vm.toString(block.timestamp), ".csv");
-        vm.writeFile(fileName, deploymentData);
-        console.log("Deployment data saved to:", fileName);
     }
 } 
