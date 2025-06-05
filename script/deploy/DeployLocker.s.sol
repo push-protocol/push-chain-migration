@@ -18,7 +18,7 @@ import "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
 contract DeployLockerScript is Script {
     function run() external {
         // Get private key from environment
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_OWNER");
         address deployerAddress = vm.addr(deployerPrivateKey);
         
         vm.startBroadcast(deployerPrivateKey);

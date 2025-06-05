@@ -13,7 +13,7 @@ import "@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol";
  */
 contract DeployReleaseScript is Script {
     function run() external {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_OWNER");
         address deployerAddress = vm.addr(deployerPrivateKey);
         
         vm.startBroadcast(deployerPrivateKey);
