@@ -20,33 +20,30 @@ contract DeployLockerScript is Script {
         // Get private key from environment
         uint256 deployerPrivateKey = vm.envUint("DEPLOYER_OWNER");
         address deployerAddress = vm.addr(deployerPrivateKey);
-        
+
         vm.startBroadcast(deployerPrivateKey);
-        
+
         console.log("Deploying contracts with address:", deployerAddress);
-        
+
         MigrationLocker implementation = new MigrationLocker();
         console.log("MigrationLocker implementation deployed at:", address(implementation));
-        
+
         ProxyAdmin proxyAdmin = new ProxyAdmin(deployerAddress);
         console.log("ProxyAdmin deployed at:", address(proxyAdmin));
-        
+
         bytes memory initData = abi.encodeWithSelector(
             MigrationLocker.initialize.selector,
             deployerAddress // Set deployer as initial owner
         );
-        
-        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
-            address(implementation),
-            address(proxyAdmin),
-            initData
-        );
-        
+
+        TransparentUpgradeableProxy proxy =
+            new TransparentUpgradeableProxy(address(implementation), address(proxyAdmin), initData);
+
         address proxyAddress = address(proxy);
         console.log("MigrationLocker proxy deployed at:", proxyAddress);
         console.log("For verification, implementation address:", address(implementation));
         console.log("For interaction, use proxy address:", proxyAddress);
-        
+
         vm.stopBroadcast();
     }
-} 
+}

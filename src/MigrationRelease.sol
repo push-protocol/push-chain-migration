@@ -1,46 +1,35 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity 0.8.29;
 
-import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
-import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
-import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
+import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
+import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import { MerkleProof } from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @title MigrationRelease
 /// @author Push Chain
 /// @notice Allows users to claim their tokens based on a Merkle tree proof
 contract MigrationRelease is Initializable, Ownable2StepUpgradeable, PausableUpgradeable {
     using SafeERC20 for IERC20;
-    event ReleasedInstant(
-        address indexed recipient,
-        uint indexed amount,
-        uint indexed releaseTime
-    );
-    event ReleasedVested(
-        address indexed recipient,
-        uint indexed amount,
-        uint indexed releaseTime
-    );
-    event FundsAdded(uint indexed amount, uint indexed timestamp);
 
-    event MerkleRootUpdated(
-        bytes32 indexed oldMerkleRoot,
-        bytes32 indexed newMerkleRoot
-    );
+    event ReleasedInstant(address indexed recipient, uint256 indexed amount, uint256 indexed releaseTime);
+    event ReleasedVested(address indexed recipient, uint256 indexed amount, uint256 indexed releaseTime);
+    event FundsAdded(uint256 indexed amount, uint256 indexed timestamp);
+
+    event MerkleRootUpdated(bytes32 indexed oldMerkleRoot, bytes32 indexed newMerkleRoot);
 
     bytes32 public merkleRoot;
 
-    uint public constant VESTING_PERIOD = 90 days;
-    uint public constant INSTANT_RATIO = 75;
-    uint public constant VESTING_RATIO = 75;
+    uint256 public constant VESTING_PERIOD = 90 days;
+    uint256 public constant INSTANT_RATIO = 75;
+    uint256 public constant VESTING_RATIO = 75;
 
-    uint public totalReleased;
+    uint256 public totalReleased;
     bool public isClaimPaused;
 
-
-    mapping(bytes32 => uint) public instantClaimTime;
+    mapping(bytes32 => uint256) public instantClaimTime;
 
     mapping(bytes32 => bool) public claimedvested;
 
@@ -49,9 +38,7 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable, PausableUpg
         _disableInitializers();
     }
 
-    function initialize(
-        address initialOwner
-    ) public initializer {
+    function initialize(address initialOwner) public initializer {
         __Ownable2Step_init();
         __Ownable_init(initialOwner);
     }
@@ -60,6 +47,7 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable, PausableUpg
     function pause() external onlyOwner {
         _pause();
     }
+
     function unpause() external onlyOwner {
         _unpause();
     }
@@ -98,16 +86,18 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable, PausableUpg
 
     function releaseInstant(
         address _recipient,
-        uint _amount,
+        uint256 _amount,
         bytes32[] calldata _merkleProof
-    ) external whenNotPaused {
+    )
+        external
+        whenNotPaused
+    {
         bytes32 leaf = keccak256(abi.encodePacked(_recipient, _amount));
         require(
-            verifyAddress(_recipient, _amount, _merkleProof) &&
-                instantClaimTime[leaf] == 0,
+            verifyAddress(_recipient, _amount, _merkleProof) && instantClaimTime[leaf] == 0,
             "Not Whitelisted or already Claimed"
         );
-        uint instantAmount = (_amount * INSTANT_RATIO) / 10; //Instantly relaese 7.5 times the amount
+        uint256 instantAmount = (_amount * INSTANT_RATIO) / 10; //Instantly relaese 7.5 times the amount
 
         instantClaimTime[leaf] = block.timestamp;
         totalReleased += instantAmount;
@@ -126,62 +116,52 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable, PausableUpg
     /// @dev transfers the vested amount to the recipient, reverting if the transfer fails
     /// @dev emits a ReleasedVested event with the recipient address, amount, and release time
 
-    function releaseVested(
-        address _recipient,
-        uint _amount
-            ) external whenNotPaused {
+    function releaseVested(address _recipient, uint256 _amount) external whenNotPaused {
         bytes32 leaf = keccak256(abi.encodePacked(_recipient, _amount));
         if (claimedvested[leaf] == true) {
             revert("Already Claimed");
         }
 
-        if (
-            instantClaimTime[leaf] == 0 ||
-            instantClaimTime[leaf] + VESTING_PERIOD > block.timestamp
-        ) {
+        if (instantClaimTime[leaf] == 0 || instantClaimTime[leaf] + VESTING_PERIOD > block.timestamp) {
             revert("Not Whitelisted or Not Vested");
         }
 
-        uint vestedAmount = (_amount * VESTING_RATIO) / 10; // Vested amount is 7.5 times the amount
+        uint256 vestedAmount = (_amount * VESTING_RATIO) / 10; // Vested amount is 7.5 times the amount
         claimedvested[leaf] = true;
         totalReleased += vestedAmount;
         emit ReleasedVested(_recipient, vestedAmount, block.timestamp);
         transferFunds(_recipient, vestedAmount);
     }
 
-    function transferFunds(address _recipient, uint _amount) private {
+    function transferFunds(address _recipient, uint256 _amount) private {
         if (address(this).balance < _amount) {
             revert("Insufficient balance");
         }
-        (bool res, ) = payable(_recipient).call{value: _amount}("");
+        (bool res,) = payable(_recipient).call{ value: _amount }("");
         require(res, "Transfer failed");
     }
 
     function verifyAddress(
         address recipient,
-        uint amount,
+        uint256 amount,
         bytes32[] calldata _merkleProof
-    ) private view returns (bool) {
+    )
+        private
+        view
+        returns (bool)
+    {
         bytes32 leaf = keccak256(abi.encodePacked(recipient, amount));
         return MerkleProof.verify(_merkleProof, merkleRoot, leaf);
     }
 
-    function recoverFunds(
-        address _token,
-        address _to,
-        uint _amount
-    ) external onlyOwner whenNotPaused {
+    function recoverFunds(address _token, address _to, uint256 _amount) external onlyOwner whenNotPaused {
         require(_to != address(0), "Invalid recipient");
 
         if (_token == address(0)) {
             transferFunds(_to, _amount);
             return;
         } else {
-            require(
-                _amount > 0 &&
-                    _amount <= IERC20(_token).balanceOf(address(this)),
-                "Invalid amount"
-            );
+            require(_amount > 0 && _amount <= IERC20(_token).balanceOf(address(this)), "Invalid amount");
             IERC20(_token).safeTransfer(_to, _amount);
         }
     }
