@@ -1,18 +1,18 @@
 const fs = require("fs");
 const path = require("path");
 const { ethers } = require("hardhat");
+const { LOCKER_CONFIG, OUTPUT_CONFIG } = require("./config");
 
 async function main() {
-  const CONTRACT_ADDRESS = "0x5f4A632526a907003879dAd557dBdcf624EBe992"; // replace with actual address
-  const LOCKER_ABI = [
-    "event Locked(address recipient, uint256 amount)" // Removed indexed id
-  ];
+  const CONTRACT_ADDRESS = LOCKER_CONFIG.CONTRACT_ADDRESS;
+  const LOCKER_ABI = LOCKER_CONFIG.ABI;
+  const START_BLOCK = LOCKER_CONFIG.START_BLOCK;
 
   const provider = ethers.provider;
   const locker = new ethers.Contract(CONTRACT_ADDRESS, LOCKER_ABI, provider);
 
   console.log("🔍 Fetching Locked events...");
-  const events = await locker.queryFilter("Locked", 0, "latest");
+  const events = await locker.queryFilter("Locked", START_BLOCK, "latest");
   console.log(`📦 Found ${events.length} Locked events.`);
 
   // Group events by address and combine amounts
@@ -46,7 +46,7 @@ async function main() {
     console.log(`🔄 Combined ${duplicateCount} duplicate addresses`);
   }
 
-  const outputPath = path.join(__dirname, "../../output/claims.json");
+  const outputPath = path.join(__dirname, OUTPUT_CONFIG.CLAIMS_PATH);
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
   fs.writeFileSync(outputPath, JSON.stringify(claims, null, 2));
 

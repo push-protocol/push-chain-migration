@@ -14,7 +14,7 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable, PausableUpgr
     /// @notice Emitted when a user locks their tokens
     /// @param recipient The address of the recipient
     /// @param amount The amount of tokens locked
-    event Locked(address recipient, uint amount);
+    event Locked(address caller, address recipient, uint amount);
 
     address public constant PUSH_TOKEN =
         0xf418588522d5dd018b425E472991E52EBBeEEEEE;
@@ -59,7 +59,7 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable, PausableUpgr
         }
 
         IPUSH(PUSH_TOKEN).transferFrom(msg.sender, address(this), _amount);
-        emit Locked(_recipient, _amount);
+        emit Locked(msg.sender, _recipient, _amount);
     }
 
     /// @notice Allows the owner to burn a specified amount of tokens
