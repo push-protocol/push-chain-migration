@@ -4,7 +4,7 @@ pragma solidity 0.8.29;
 import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import { IPUSH } from "./interfaces/IPUSH.sol";
+import { IPUSH } from "./interfaces/IPush.sol";
 
 /// @title MigrationLocker
 /// @author Push Chain

@@ -4,7 +4,7 @@ const { ethers } = require("hardhat");
 const { getProof, getRoot } = require("../utils/merkle");
 
 async function main() {
-    const claimsPath = path.join(__dirname, "../../output/claims.json");
+    const claimsPath = path.join(__dirname, "../../output/migration-list.json");
     const claims = JSON.parse(fs.readFileSync(claimsPath, "utf8"));
 
     const [deployer] = await ethers.getSigners();

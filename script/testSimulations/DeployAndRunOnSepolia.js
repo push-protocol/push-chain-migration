@@ -14,8 +14,7 @@ async function main() {
   console.log("Deployer:", deployer.address);
 
   // Load PUSH Token contract with mint function
-  const ERC20 = await ethers.getContractFactory("EPNS");
-  const pushToken = ERC20.attach(TOKEN_ADDRESS);
+  const pushToken = await ethers.getContractAt("IPUSH", TOKEN_ADDRESS);
 
   // Deploy MigrationLocker
   const MigrationLocker = await ethers.getContractFactory("MigrationLocker");
@@ -41,30 +40,35 @@ async function main() {
       value: ethers.parseEther("0.01"),
     });
     await tx.wait();
+    console.log(`💰 Sent 0.01 ETH to ${wallet.address}`);
   }
 
   // Each user mints PUSH, approves, and locks tokens
   for (const user of users) {
+    console.log(`🔑 User ${user.address} is minting and locking tokens`);
     const userPush = pushToken.connect(user);
     const userLocker = locker.connect(user);
 
     // Mint tokens by calling mint from the user wallet
     const mintTx = await userPush.mint(amountToMint);
     await mintTx.wait();
+    console.log(`💰 User ${user.address} minted ${amountToMint} PUSH`);
 
     const approveTx = await userPush.approve(await locker.getAddress(), amountToLock + amountToLock2 + amountToLock3);
     await approveTx.wait();
+    console.log(`💰 User ${user.address} approved ${amountToLock + amountToLock2 + amountToLock3} PUSH`);
 
     const lockTx = await userLocker.lock(amountToLock, user.address);
     await lockTx.wait();
+    console.log(`💰 User ${user.address} locked ${amountToLock} PUSH`);
 
     const lockTx2 = await userLocker.lock(amountToLock2, user.address);
     await lockTx2.wait();
+    console.log(`💰 User ${user.address} locked ${amountToLock2} PUSH`);
 
     const lockTx3 = await userLocker.lock(amountToLock3, user.address);
     await lockTx3.wait();
-
-    console.log(`🔐 ${user.address} locked ${ethers.formatEther(amountToLock)} PUSH`);
+    console.log(`💰 User ${user.address} locked ${amountToLock3} PUSH`);
   }
 
   console.log("✅ All users minted and locked tokens. You can now run the fetch script.");

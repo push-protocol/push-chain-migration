@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const { ethers, upgrades } = require("hardhat");
-const whitelist = require("../../output/claims.json");
+const whitelist = require("../../output/migration-list.json");
 const { getRoot } = require("../utils/merkle");
 
 async function main() {
