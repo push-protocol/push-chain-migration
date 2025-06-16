@@ -124,7 +124,7 @@ contract MigrationLockerTest is Test {
         vm.expectEmit(true, true, true, true);
         // The caller is the test contract itself, not user1
         emit Locked(address(this), user1, LOCK_AMOUNT_1, locker.epoch());
-        
+
         // Now call the function
         locker.lock(LOCK_AMOUNT_1, user1);
     }
@@ -358,6 +358,7 @@ contract MigrationLockerTest is Test {
 // @dev primarily made for the testActualTokenTransfer() to work without mockCalls
 contract MockMigrationLocker is Initializable, Ownable2StepUpgradeable, PausableUpgradeable {
     event Locked(address caller, address recipient, uint256 amount, uint256 epoch);
+
     uint256 public epoch = 1;
 
     address public immutable PUSH_TOKEN;

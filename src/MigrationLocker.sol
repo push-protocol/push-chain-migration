@@ -10,9 +10,8 @@ import { IPUSH } from "./interfaces/IPush.sol";
 /// @author Push Chain
 /// @notice Allows users to lock their Push tokens for migration
 contract MigrationLocker is Initializable, Ownable2StepUpgradeable, PausableUpgradeable {
-
     /// @notice Indicates the current epoch
-    /// @dev    Each specific epoch represents a particular block of time under which all Locked events will be 
+    /// @dev    Each specific epoch represents a particular block of time under which all Locked events will be
     ///         recorded to create the merkle tree all user deposits done in that specific epoch.
     ///         The epoch is owner-controlled and new epoch is initiated via initiateNewEpoch().
     ///         Valid epoch starts from 1.
@@ -23,8 +22,10 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable, PausableUpgr
     /// @notice The address of the PUSH token
     address public constant PUSH_TOKEN = 0xf418588522d5dd018b425E472991E52EBBeEEEEE;
 
-    /**** EVENTS and ERRORS *******/
-    
+    /**
+     * EVENTS and ERRORS ******
+     */
+
     /// @notice Emitted when a user locks their tokens
     /// @param caller The address of the caller
     /// @param recipient The address of the recipient
@@ -47,7 +48,6 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable, PausableUpgr
 
         initiateNewEpoch();
     }
-
 
     function initiateNewEpoch() public onlyOwner {
         epoch++;

@@ -26,7 +26,7 @@ contract MigrationReleaseTest is Test {
     uint256 public constant CLAIM_AMOUNT_3 = 300 ether;
     uint256 public constant CLAIM_AMOUNT_4 = 400 ether;
     uint256 public constant CLAIM_AMOUNT_5 = 500 ether;
-    
+
     uint256 public constant EPOCH = 1;
 
     bytes32 public merkleRoot;
@@ -54,7 +54,7 @@ contract MigrationReleaseTest is Test {
     function setupMerkleTree() internal {
         // We'll create a much simpler tree with just 2 users for testing
         bytes32[] memory leaves = new bytes32[](2);
-        
+
         // Use the EPOCH constant for all test cases
 
         // Create leaves for each user
