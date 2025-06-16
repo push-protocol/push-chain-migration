@@ -26,6 +26,8 @@ contract MigrationReleaseTest is Test {
     uint256 public constant CLAIM_AMOUNT_3 = 300 ether;
     uint256 public constant CLAIM_AMOUNT_4 = 400 ether;
     uint256 public constant CLAIM_AMOUNT_5 = 500 ether;
+    
+    uint256 public constant EPOCH = 1;
 
     bytes32 public merkleRoot;
 
@@ -43,14 +45,21 @@ contract MigrationReleaseTest is Test {
         return keccak256(abi.encodePacked(user, amount));
     }
 
+    // Function to create a leaf from user address, claim amount, and epoch
+    function createLeaf(address user, uint256 amount, uint256 epoch) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(user, amount, epoch));
+    }
+
     // Simple method to create a basic Merkle tree with just 2 leaves for simplicity
     function setupMerkleTree() internal {
         // We'll create a much simpler tree with just 2 users for testing
         bytes32[] memory leaves = new bytes32[](2);
+        
+        // Use the EPOCH constant for all test cases
 
         // Create leaves for each user
-        leaves[0] = createLeaf(user1, CLAIM_AMOUNT_1);
-        leaves[1] = createLeaf(user2, CLAIM_AMOUNT_2);
+        leaves[0] = createLeaf(user1, CLAIM_AMOUNT_1, EPOCH);
+        leaves[1] = createLeaf(user2, CLAIM_AMOUNT_2, EPOCH);
 
         // Sort leaves to ensure consistent ordering (not strictly necessary for 2 leaves,
         // but a good practice for Merkle trees)
@@ -67,8 +76,8 @@ contract MigrationReleaseTest is Test {
         // For a 2-leaf tree, the proof for one leaf is just the other leaf
 
         // Check which leaf corresponds to which user after sorting
-        bytes32 leaf1 = createLeaf(user1, CLAIM_AMOUNT_1);
-        bytes32 leaf2 = createLeaf(user2, CLAIM_AMOUNT_2);
+        bytes32 leaf1 = createLeaf(user1, CLAIM_AMOUNT_1, EPOCH);
+        bytes32 leaf2 = createLeaf(user2, CLAIM_AMOUNT_2, EPOCH);
 
         // Create proofs
         userMerkleProofs[user1] = new bytes32[](1);
@@ -260,7 +269,7 @@ contract MigrationReleaseTest is Test {
         emit ReleasedInstant(user1, expectedAmount, block.timestamp);
 
         // Call the function with the real proof
-        release.releaseInstant(user1, CLAIM_AMOUNT_1, proof);
+        release.releaseInstant(user1, CLAIM_AMOUNT_1, EPOCH, proof);
 
         // Verify the user received the expected amount
         uint256 userBalanceAfter = user1.balance;
@@ -270,7 +279,7 @@ contract MigrationReleaseTest is Test {
         assertEq(release.totalReleased(), expectedAmount);
 
         // Verify claim was recorded in the instantClaimTime mapping
-        bytes32 leaf = createLeaf(user1, CLAIM_AMOUNT_1);
+        bytes32 leaf = createLeaf(user1, CLAIM_AMOUNT_1, EPOCH);
         assertEq(release.instantClaimTime(leaf), block.timestamp);
     }
 
@@ -279,18 +288,18 @@ contract MigrationReleaseTest is Test {
         bytes32[] memory invalidProof = userMerkleProofs[user3];
 
         vm.expectRevert("Not Whitelisted or already Claimed");
-        release.releaseInstant(user1, CLAIM_AMOUNT_1, invalidProof);
+        release.releaseInstant(user1, CLAIM_AMOUNT_1, EPOCH, invalidProof);
     }
 
     function testCannotReleaseInstantTwice() public {
         // First release
         bytes32[] memory proof = userMerkleProofs[user1];
         vm.prank(user1);
-        release.releaseInstant(user1, CLAIM_AMOUNT_1, proof);
+        release.releaseInstant(user1, CLAIM_AMOUNT_1, EPOCH, proof);
 
         // Try to release again
         vm.expectRevert("Not Whitelisted or already Claimed");
-        release.releaseInstant(user1, CLAIM_AMOUNT_1, proof);
+        release.releaseInstant(user1, CLAIM_AMOUNT_1, EPOCH, proof);
     }
 
     function testCannotReleaseInstantWhenPaused() public {
@@ -301,7 +310,7 @@ contract MigrationReleaseTest is Test {
 
         // Include EnforcedPause() error
         vm.expectRevert(abi.encodeWithSelector(EnforcedPause.selector));
-        release.releaseInstant(user1, CLAIM_AMOUNT_1, proof);
+        release.releaseInstant(user1, CLAIM_AMOUNT_1, EPOCH, proof);
     }
 
     function testCannotReleaseInstantWithInsufficientContractBalance() public {
@@ -320,7 +329,7 @@ contract MigrationReleaseTest is Test {
 
         // Try to claim an amount that exceeds the contract balance
         vm.expectRevert("Insufficient balance");
-        newRelease.releaseInstant(user1, CLAIM_AMOUNT_1, userMerkleProofs[user1]);
+        newRelease.releaseInstant(user1, CLAIM_AMOUNT_1, EPOCH, userMerkleProofs[user1]);
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -330,7 +339,7 @@ contract MigrationReleaseTest is Test {
     function testReleaseVested() public {
         // First release instant
         bytes32[] memory proof = userMerkleProofs[user1];
-        release.releaseInstant(user1, CLAIM_AMOUNT_1, proof);
+        release.releaseInstant(user1, CLAIM_AMOUNT_1, EPOCH, proof);
 
         // Fast forward past vesting period
         vm.warp(block.timestamp + release.VESTING_PERIOD() + 1);
@@ -341,7 +350,7 @@ contract MigrationReleaseTest is Test {
 
         vm.expectEmit(true, true, true, true);
         emit ReleasedVested(user1, expectedAmount, block.timestamp);
-        release.releaseVested(user1, CLAIM_AMOUNT_1);
+        release.releaseVested(user1, CLAIM_AMOUNT_1, EPOCH);
 
         uint256 userBalanceAfter = user1.balance;
         assertEq(userBalanceAfter - userBalanceBefore, expectedAmount);
@@ -353,33 +362,33 @@ contract MigrationReleaseTest is Test {
     function testCannotReleaseVestedBeforeVestingPeriod() public {
         // First release instant
         bytes32[] memory proof = userMerkleProofs[user1];
-        release.releaseInstant(user1, CLAIM_AMOUNT_1, proof);
+        release.releaseInstant(user1, CLAIM_AMOUNT_1, EPOCH, proof);
 
         // Try to release vested before vesting period
         vm.expectRevert("Not Whitelisted or Not Vested");
-        release.releaseVested(user1, CLAIM_AMOUNT_1);
+        release.releaseVested(user1, CLAIM_AMOUNT_1, EPOCH);
     }
 
     function testCannotReleaseVestedTwice() public {
         // First release instant
         bytes32[] memory proof = userMerkleProofs[user1];
-        release.releaseInstant(user1, CLAIM_AMOUNT_1, proof);
+        release.releaseInstant(user1, CLAIM_AMOUNT_1, EPOCH, proof);
 
         // Fast forward past vesting period
         vm.warp(block.timestamp + release.VESTING_PERIOD() + 1);
 
         // First vested release
-        release.releaseVested(user1, CLAIM_AMOUNT_1);
+        release.releaseVested(user1, CLAIM_AMOUNT_1, EPOCH);
 
         // Try to release vested again
         vm.expectRevert("Already Claimed");
-        release.releaseVested(user1, CLAIM_AMOUNT_1);
+        release.releaseVested(user1, CLAIM_AMOUNT_1, EPOCH);
     }
 
     function testCannotReleaseVestedWhenPaused() public {
         // First release instant
         bytes32[] memory proof = userMerkleProofs[user1];
-        release.releaseInstant(user1, CLAIM_AMOUNT_1, proof);
+        release.releaseInstant(user1, CLAIM_AMOUNT_1, EPOCH, proof);
 
         // Fast forward past vesting period
         vm.warp(block.timestamp + release.VESTING_PERIOD() + 1);
@@ -388,7 +397,7 @@ contract MigrationReleaseTest is Test {
         release.pause();
 
         vm.expectRevert(abi.encodeWithSelector(EnforcedPause.selector));
-        release.releaseVested(user1, CLAIM_AMOUNT_1);
+        release.releaseVested(user1, CLAIM_AMOUNT_1, EPOCH);
     }
 
     function testCannotReleaseVestedWithInsufficientContractBalance() public {
@@ -408,14 +417,14 @@ contract MigrationReleaseTest is Test {
 
         // Release instant
         bytes32[] memory proof = userMerkleProofs[user1];
-        newRelease.releaseInstant(user1, CLAIM_AMOUNT_1, proof);
+        newRelease.releaseInstant(user1, CLAIM_AMOUNT_1, EPOCH, proof);
 
         // Fast forward past vesting period
         vm.warp(block.timestamp + newRelease.VESTING_PERIOD() + 1);
 
         // Try to release vested with insufficient balance
         vm.expectRevert("Insufficient balance");
-        newRelease.releaseVested(user1, CLAIM_AMOUNT_1);
+        newRelease.releaseVested(user1, CLAIM_AMOUNT_1, EPOCH);
     }
 }
 
