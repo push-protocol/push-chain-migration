@@ -31,9 +31,6 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable, PausableUpgr
     /// @param amount The amount of tokens locked
     /// @param epoch The epoch number
     event Locked(address caller, address recipient, uint256 amount, uint256 epoch);
-    /// @notice Emitted when the contract is inactive
-    /// @dev    The contract is inactive when the epoch is 0.
-    error ContractInactive();
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
