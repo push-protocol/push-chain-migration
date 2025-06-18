@@ -455,35 +455,35 @@ contract MigrationReleaseTest is Test {
     function testRecoverERC20Tokens() public {
         // Deploy a mock ERC20 token
         ERC20Mock mockToken = new ERC20Mock("Mock Token", "MOCK");
-        
+
         // Mint tokens to the contract
         uint256 tokenAmount = 1000 ether;
         mockToken.mint(address(release), tokenAmount);
-        
+
         // Verify initial balances
         assertEq(mockToken.balanceOf(address(release)), tokenAmount);
         assertEq(mockToken.balanceOf(user1), 0);
-        
+
         // Recover tokens
         release.recoverFunds(address(mockToken), user1, tokenAmount);
-        
+
         // Verify final balances
         assertEq(mockToken.balanceOf(address(release)), 0);
         assertEq(mockToken.balanceOf(user1), tokenAmount);
     }
-    
+
     function testCannotRecoverInvalidERC20Amount() public {
         // Deploy a mock ERC20 token
         ERC20Mock mockToken = new ERC20Mock("Mock Token", "MOCK");
-        
+
         // Mint tokens to the contract
         uint256 tokenAmount = 1000 ether;
         mockToken.mint(address(release), tokenAmount);
-        
+
         // Try to recover more tokens than the contract has
         vm.expectRevert("Invalid amount");
         release.recoverFunds(address(mockToken), user1, tokenAmount + 1);
-        
+
         // Try to recover zero tokens
         vm.expectRevert("Invalid amount");
         release.recoverFunds(address(mockToken), user1, 0);

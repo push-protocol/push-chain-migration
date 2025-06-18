@@ -79,24 +79,24 @@ contract MigrationLockerTest is Test {
         assertEq(locker.paused(), false);
         assertEq(locker.owner(), owner);
     }
-    
+
     function testInitiateNewEpoch() public {
         // Get the current epoch
         uint256 initialEpoch = locker.epoch();
-        
+
         // Advance the block
         vm.roll(block.number + 10);
-        
+
         // Call initiateNewEpoch
         locker.initiateNewEpoch();
-        
+
         // Verify epoch was incremented
         assertEq(locker.epoch(), initialEpoch + 1);
-        
+
         // Verify the new epoch's start block was set correctly
         assertEq(locker.epochStartBlock(initialEpoch + 1), block.number);
     }
-    
+
     function testOnlyOwnerCanInitiateNewEpoch() public {
         // Try to call initiateNewEpoch as non-owner
         vm.prank(user1);
