@@ -33,7 +33,7 @@ module.exports = {
     },
 
     pushchain: {
-      url: "https://evm.pn1.dev.push.org",
+      url: "https://evm.rpc-testnet-donut-node1.push.org/",
       accounts: [process.env.PRIVATE]
       ,
     },
@@ -47,6 +47,10 @@ module.exports = {
       url: `https://sepolia.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
       accounts: [process.env.PRIVATE]
 
+    },
+    mainnet: {
+      url: `https://mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
+      accounts: [process.env.PRIVATE]
     }
   },
 };
