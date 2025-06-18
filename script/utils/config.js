@@ -6,9 +6,12 @@
 const LOCKER_CONFIG = {
   CONTRACT_ADDRESS: "",
   ABI: [
-    "event Locked(address caller, address recipient, uint256 amount)"
+    "event Locked(address caller, address recipient, uint256 amount, uint256 epoch)",
+    "function epoch() view returns (uint256)",
+    "function epochStartBlock(uint256) view returns (uint256)"
   ],
-  START_BLOCK: 0, // Block number where to start fetching events from ( DON't MARK THIS AS ZERO)
+  // Optional: Filter specific epochs (leave empty to process all epochs)
+  FILTER_EPOCHS: [] // e.g. [1, 2] to only process epochs 1 and 2
 };
 
 // Output configuration

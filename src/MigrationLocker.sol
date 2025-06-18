@@ -10,12 +10,28 @@ import { IPUSH } from "./interfaces/IPush.sol";
 /// @author Push Chain
 /// @notice Allows users to lock their Push tokens for migration
 contract MigrationLocker is Initializable, Ownable2StepUpgradeable, PausableUpgradeable {
+    /// @notice Indicates the current epoch
+    /// @dev    Each specific epoch represents a particular block of time under which all Locked events will be
+    ///         recorded to create the merkle tree all user deposits done in that specific epoch.
+    ///         The epoch is owner-controlled and new epoch is initiated via initiateNewEpoch().
+    ///         Valid epoch starts from 1.
+    uint256 public epoch;
+    /// @notice Maps a specific epoch to its start block.
+    ///         Read-only state for on-chain, Useful state off-chain for fetching events from the contract.
+    mapping(uint256 => uint256) public epochStartBlock;
+    /// @notice The address of the PUSH token
+    address public constant PUSH_TOKEN = 0xf418588522d5dd018b425E472991E52EBBeEEEEE;
+
+    /**
+     * EVENTS and ERRORS ******
+     */
+
     /// @notice Emitted when a user locks their tokens
+    /// @param caller The address of the caller
     /// @param recipient The address of the recipient
     /// @param amount The amount of tokens locked
-    event Locked(address caller, address recipient, uint256 amount);
-
-    address public constant PUSH_TOKEN = 0xf418588522d5dd018b425E472991E52EBBeEEEEE;
+    /// @param epoch The epoch number
+    event Locked(address caller, address recipient, uint256 amount, uint256 epoch);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -29,6 +45,13 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable, PausableUpgr
         __Ownable2Step_init();
         __Ownable_init(initialOwner);
         __Pausable_init();
+
+        initiateNewEpoch();
+    }
+
+    function initiateNewEpoch() public onlyOwner {
+        epoch++;
+        epochStartBlock[epoch] = block.number;
     }
 
     /// Pauseable Features
@@ -56,7 +79,7 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable, PausableUpgr
         }
 
         IPUSH(PUSH_TOKEN).transferFrom(msg.sender, address(this), _amount);
-        emit Locked(msg.sender, _recipient, _amount);
+        emit Locked(msg.sender, _recipient, _amount, epoch);
     }
 
     /// @notice Allows the owner to burn a specified amount of tokens

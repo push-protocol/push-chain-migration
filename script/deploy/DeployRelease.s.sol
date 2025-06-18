@@ -22,16 +22,13 @@ contract DeployReleaseScript is Script {
         MigrationRelease implementation = new MigrationRelease();
         console.log("MigrationRelease implementation deployed at:", address(implementation));
 
-        ProxyAdmin proxyAdmin = new ProxyAdmin(deployerAddress);
-        console.log("ProxyAdmin deployed at:", address(proxyAdmin));
-
         bytes memory initData = abi.encodeWithSelector(
             MigrationRelease.initialize.selector,
             deployerAddress // Set deployer as initial owner
         );
 
         TransparentUpgradeableProxy proxy =
-            new TransparentUpgradeableProxy(address(implementation), address(proxyAdmin), initData);
+            new TransparentUpgradeableProxy(address(implementation), deployerAddress, initData);
 
         address proxyAddress = address(proxy);
         console.log("MigrationRelease proxy deployed at:", proxyAddress);

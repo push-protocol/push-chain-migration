@@ -26,7 +26,7 @@ contract MigrationLockerTest is Test {
     uint256 public constant LOCK_AMOUNT_3 = 300 ether;
 
     // Import the event from MigrationLocker
-    event Locked(address recipient, uint256 amount);
+    event Locked(address caller, address recipient, uint256 amount, uint256 epoch);
 
     function setUp() public {
         owner = address(this);
@@ -120,9 +120,12 @@ contract MigrationLockerTest is Test {
     //////////////////////////////////////////////////////////////*/
 
     function testLock() public {
-        vm.prank(user1);
-        vm.expectEmit(true, true, false, true);
-        emit Locked(user1, LOCK_AMOUNT_1);
+        // Set up the expected event
+        vm.expectEmit(true, true, true, true);
+        // The caller is the test contract itself, not user1
+        emit Locked(address(this), user1, LOCK_AMOUNT_1, locker.epoch());
+
+        // Now call the function
         locker.lock(LOCK_AMOUNT_1, user1);
     }
 
@@ -354,7 +357,9 @@ contract MigrationLockerTest is Test {
 // @dev this is Custom mock locker that uses a test dummy token instead of the hardcoded one.
 // @dev primarily made for the testActualTokenTransfer() to work without mockCalls
 contract MockMigrationLocker is Initializable, Ownable2StepUpgradeable, PausableUpgradeable {
-    event Locked(address recipient, uint256 amount);
+    event Locked(address caller, address recipient, uint256 amount, uint256 epoch);
+
+    uint256 public epoch = 1;
 
     address public immutable PUSH_TOKEN;
 
@@ -380,7 +385,7 @@ contract MockMigrationLocker is Initializable, Ownable2StepUpgradeable, Pausable
         }
 
         IPUSH(PUSH_TOKEN).transferFrom(msg.sender, address(this), _amount);
-        emit Locked(_recipient, _amount);
+        emit Locked(msg.sender, _recipient, _amount, epoch);
     }
 }
 
