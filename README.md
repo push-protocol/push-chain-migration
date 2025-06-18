@@ -159,55 +159,11 @@ npx hardhat compile
 ### Testing the Project
 
 ```shell
-npx hardhat test
+forge test
 ```
-
-### Test dry run on testnet
-Deploying and locking on sepolia
-```shell
-npx hardhat run script/TestRuns/DeployAndRunOnSepolia.js --network sepolia 
-```
-
-Fetching the events from sepolia
-```shell
-npx hardhat run script/utils/fetchAndStoreEvents.js --network sepolia
-```
-
-Once fetched, deploy on local Push chain (Push chain should be running, and the account should have funds)
-```shell
-npx hardhat run script/Deployments/DeployRelease.js --network pushlocalnet 
-```
-
-Update address in `ClaimTokensOnPush.js` and run. 
-
-```shell
-npx hardhat run script/TestRuns/ClaimTokensOnPush.js  --network pushlocalnet
-```
-
-### Deploying
-
-```shell
-npx hardhat run script/Deployments/DeployLocker.js
-npx hardhat run script/Deployments/DeployRelease.js
-```
-
-### Generating Merkle Root
-
-After users have locked their tokens:
-
-```shell
-node script/utils/fetchAndStoreEvents.js
-```
-
-
-```shell
-node script/utils/getRoot.js 
-```
----
 
 ## License
 
 This project is licensed under the MIT License with Attribution - see the [LICENSE](LICENSE) file for details.
 
 Any use of this code must include visible attribution to Push Protocol (https://push.org).
-

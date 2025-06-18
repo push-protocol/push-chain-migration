@@ -5,6 +5,16 @@
       "address": "0x2f44aF8049C2bcc487dE33CBD5E38d6Fc4daa49b",
       "txHash": "0x983422dbfc78e60b1c6ebc1a701dc2407f1474ed31bdff0d92943c783b9fceaf",
       "kind": "transparent"
+    },
+    {
+      "address": "0xE6f6f9fA92e6d8A974Ec79a69cD8D97f7dEC15E7",
+      "txHash": "0xd3b2bfa31b46d3689500b5ae4a6ae48a208d2e209906ac6e2dd0deb04d03f750",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x5D548bB9E305AAe0d6dc6e6fdc3ab419f6aC0037",
+      "txHash": "0x74ae58e55ad2ee66c12b2e96bde6a464680f0d0e868d1f8416f859b560dee387",
+      "kind": "transparent"
     }
   ],
   "impls": {
@@ -103,6 +113,167 @@
             "numberOfBytes": "32"
           },
           "t_struct(OwnableStorage)68_storage": {
+            "label": "struct OwnableUpgradeable.OwnableStorage",
+            "members": [
+              {
+                "label": "_owner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_uint64": {
+            "label": "uint64",
+            "numberOfBytes": "8"
+          },
+          "t_bytes32": {
+            "label": "bytes32",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_bytes32,t_bool)": {
+            "label": "mapping(bytes32 => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_bytes32,t_uint256)": {
+            "label": "mapping(bytes32 => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        },
+        "namespaces": {
+          "erc7201:openzeppelin.storage.Ownable2Step": [
+            {
+              "contract": "Ownable2StepUpgradeable",
+              "label": "_pendingOwner",
+              "type": "t_address",
+              "src": "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol:29",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Ownable": [
+            {
+              "contract": "OwnableUpgradeable",
+              "label": "_owner",
+              "type": "t_address",
+              "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:24",
+              "offset": 0,
+              "slot": "0"
+            }
+          ],
+          "erc7201:openzeppelin.storage.Initializable": [
+            {
+              "contract": "Initializable",
+              "label": "_initialized",
+              "type": "t_uint64",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:69",
+              "offset": 0,
+              "slot": "0"
+            },
+            {
+              "contract": "Initializable",
+              "label": "_initializing",
+              "type": "t_bool",
+              "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:73",
+              "offset": 8,
+              "slot": "0"
+            }
+          ]
+        }
+      }
+    },
+    "b881455e2d9b797ce630aa02900118db5833fc89064842cbcbca3218bd862038": {
+      "address": "0xb2fF7f1A61860F88219faE54A240d1dE892dd877",
+      "txHash": "0x5a399855298bcd2cee2a52787743f99657d3a6d35d6d868a544c7dc41af801be",
+      "layout": {
+        "solcVersion": "0.8.29",
+        "storage": [
+          {
+            "label": "merkleRoot",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_bytes32",
+            "contract": "MigrationRelease",
+            "src": "src/MigrationRelease.sol:32"
+          },
+          {
+            "label": "totalReleased",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_uint256",
+            "contract": "MigrationRelease",
+            "src": "src/MigrationRelease.sol:38"
+          },
+          {
+            "label": "isClaimPaused",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_bool",
+            "contract": "MigrationRelease",
+            "src": "src/MigrationRelease.sol:39"
+          },
+          {
+            "label": "instantClaimTime",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_mapping(t_bytes32,t_uint256)",
+            "contract": "MigrationRelease",
+            "src": "src/MigrationRelease.sol:42"
+          },
+          {
+            "label": "claimedvested",
+            "offset": 0,
+            "slot": "4",
+            "type": "t_mapping(t_bytes32,t_bool)",
+            "contract": "MigrationRelease",
+            "src": "src/MigrationRelease.sol:44"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_struct(InitializableStorage)146_storage": {
+            "label": "struct Initializable.InitializableStorage",
+            "members": [
+              {
+                "label": "_initialized",
+                "type": "t_uint64",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "_initializing",
+                "type": "t_bool",
+                "offset": 8,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(Ownable2StepStorage)14_storage": {
+            "label": "struct Ownable2StepUpgradeable.Ownable2StepStorage",
+            "members": [
+              {
+                "label": "_pendingOwner",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              }
+            ],
+            "numberOfBytes": "32"
+          },
+          "t_struct(OwnableStorage)74_storage": {
             "label": "struct OwnableUpgradeable.OwnableStorage",
             "members": [
               {
