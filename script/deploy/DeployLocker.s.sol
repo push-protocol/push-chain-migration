@@ -28,16 +28,13 @@ contract DeployLockerScript is Script {
         MigrationLocker implementation = new MigrationLocker();
         console.log("MigrationLocker implementation deployed at:", address(implementation));
 
-        ProxyAdmin proxyAdmin = new ProxyAdmin(deployerAddress);
-        console.log("ProxyAdmin deployed at:", address(proxyAdmin));
-
         bytes memory initData = abi.encodeWithSelector(
             MigrationLocker.initialize.selector,
             deployerAddress // Set deployer as initial owner
         );
 
         TransparentUpgradeableProxy proxy =
-            new TransparentUpgradeableProxy(address(implementation), address(proxyAdmin), initData);
+            new TransparentUpgradeableProxy(address(implementation), deployerAddress, initData);
 
         address proxyAddress = address(proxy);
         console.log("MigrationLocker proxy deployed at:", proxyAddress);

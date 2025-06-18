@@ -28,53 +28,54 @@ async function main() {
     console.log(`🔍 Processing all epochs from 1 to ${currentEpoch}`);
   }
 
+  // Get the overall start and end blocks for the entire range
+  const firstEpoch = Math.min(...epochsToProcess);
+  const lastEpoch = Math.max(...epochsToProcess);
+
+  const startBlock = await locker.epochStartBlock(firstEpoch);
+  let endBlock = "latest";
+  if (lastEpoch < currentEpoch) {
+    const nextEpochStart = await locker.epochStartBlock(lastEpoch + 1);
+    endBlock = Number(nextEpochStart) - 1;
+  }
+
+  console.log(`📊 Fetching all Locked events from blocks ${startBlock} to ${endBlock}...`);
+
+  // Single query for all events in the range
+  const allEvents = await locker.queryFilter("Locked", startBlock, endBlock);
+  console.log(`📦 Found ${allEvents.length} total Locked events`);
+
   // Group events by address and combine amounts
   const addressAmounts = {};
   let totalEvents = 0;
 
-  // Process each epoch
-  for (const epochNum of epochsToProcess) {
-    // Get start block for this epoch
-    const startBlock = await locker.epochStartBlock(epochNum);
-    
-    // Get end block (either next epoch's start block or latest)
-    let endBlock = "latest";
-    if (epochNum < currentEpoch) {
-      endBlock = await locker.epochStartBlock(epochNum + 1) - 1;
+  // Process events and filter by epoch on the client side
+  for (const event of allEvents) {
+    const eventEpoch = Number(event.args.epoch);
+
+    // Skip events from epochs we're not interested in
+    if (!epochsToProcess.includes(eventEpoch)) {
+      continue;
     }
-    
-    console.log(`📊 Fetching Locked events for epoch ${epochNum} (blocks ${startBlock} to ${endBlock})...`);
-    
-    // Query events for this epoch
-    const events = await locker.queryFilter("Locked", startBlock, endBlock);
-    console.log(`📦 Found ${events.length} Locked events for epoch ${epochNum}.`);
-    totalEvents += events.length;
-    
-    events.forEach(event => {
-      const address = event.args.recipient;
-      const amount = BigInt(event.args.amount.toString());
-      const eventEpoch = event.args.epoch;
-      
-      // Double-check that the event's epoch matches what we expect
-      if (eventEpoch.toString() !== epochNum.toString()) {
-        console.warn(`⚠️ Event epoch mismatch: expected ${epochNum}, got ${eventEpoch}`);
-      }
-      
-      const key = `${address}-${eventEpoch}`;
-      
-      if (addressAmounts[key]) {
-        // Address already exists in this epoch, add to existing amount
-        addressAmounts[key].amount = addressAmounts[key].amount + amount;
-        console.log(`📝 Combined amount for ${address} in epoch ${eventEpoch}`);
-      } else {
-        // First occurrence of this address in this epoch
-        addressAmounts[key] = {
-          address: address,
-          amount: amount,
-          epoch: eventEpoch.toString()
-        };
-      }
-    });
+
+    const address = event.args.recipient;
+    const amount = BigInt(event.args.amount.toString());
+
+    const key = `${address}-${eventEpoch}`;
+
+    if (addressAmounts[key]) {
+      // Address already exists in this epoch, add to existing amount
+      addressAmounts[key].amount = addressAmounts[key].amount + amount;
+      console.log(`📝 Combined amount for ${address} in epoch ${eventEpoch}`);
+    } else {
+      // First occurrence of this address in this epoch
+      addressAmounts[key] = {
+        address: address,
+        amount: amount,
+        epoch: eventEpoch.toString()
+      };
+    }
+    totalEvents++;
   }
 
   // Convert to array format with combined amounts
@@ -85,7 +86,7 @@ async function main() {
   }));
 
   console.log(`📊 Processed ${totalEvents} events into ${claims.length} unique address-epoch combinations`);
-  
+
   // Show some statistics
   const duplicateCount = totalEvents - claims.length;
   if (duplicateCount > 0) {
@@ -97,7 +98,7 @@ async function main() {
   fs.writeFileSync(outputPath, JSON.stringify(claims, null, 2));
 
   console.log(`✅ Saved ${claims.length} unique claims to ${outputPath}`);
-  
+
   // Optional: Show top 5 addresses by amount for verification
   const sortedClaims = claims.sort((a, b) => {
     const amountA = BigInt(a.amount);

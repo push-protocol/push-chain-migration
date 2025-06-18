@@ -8,7 +8,7 @@ async function main() {
     const claims = JSON.parse(fs.readFileSync(claimsPath, "utf8"));
 
     const [deployer] = await ethers.getSigners();
-    const RELEASE_ADDRESS = "0xE6f6f9fA92e6d8A974Ec79a69cD8D97f7dEC15E7"; // Replace with actual address
+    const RELEASE_ADDRESS = "0xa6c68540b8d371CAD7440AE1e78CF100a520825c"; // Replace with actual address
 
     const Release = await ethers.getContractFactory("MigrationRelease");
     const release = Release.attach(RELEASE_ADDRESS);
@@ -29,48 +29,45 @@ async function main() {
     // await tx.wait();
     // console.log("📌 Merkle root updated:", root);
 
-
-    // Uncomment the following lines to test the instant release phase
-
-    // Instant release phase
-    // for (const { address, amount } of claims) {
-    //     const proof = getProof(address, amount, claims);
+    // Instant release phase for all epochs
+    // for (const { address, amount, epoch } of claims) {
+    //     const proof = getProof(address, amount, epoch, claims);
 
     //     const before = await ethers.provider.getBalance(address);
-    //     const tx = await release.releaseInstant(address, amount, proof);
+    //     const tx = await release.releaseInstant(address, amount, epoch, proof);
     //     await tx.wait();
     //     const after = await ethers.provider.getBalance(address);
 
     //     const received = after - before;
     //     const expected = (BigInt(amount) * 75n) / 10n;
 
-    //     console.log(`💸 ${address} received instant ${ethers.formatEther(received)} ETH`);
+    //     console.log(`💸 ${address} received instant ${ethers.formatEther(received)} ETH for epoch ${epoch}`);
 
     //     if (received !== expected) {
-    //         console.warn(`⚠️ WARNING: expected ${expected}, got ${received}`);
+    //         console.warn(`⚠️ WARNING: expected ${expected}, got ${received} for epoch ${epoch}`);
     //     }
     // }
 
-    // Vested release phase
-    for (const { address, amount } of claims) {
-        const proof = getProof(address, amount, claims);
+    // Vested release phase for all epochs
+    for (const { address, amount, epoch } of claims) {
+        const proof = getProof(address, amount, epoch, claims);
 
         const before = await ethers.provider.getBalance(address);
         try {
-            const tx = await release.releaseVested(address, amount);
+            const tx = await release.releaseVested(address, amount, epoch);
             await tx.wait();
             const after = await ethers.provider.getBalance(address);
 
             const received = after - before;
-            const expected = (BigInt(amount) *  75n) / 10n;
+            const expected = (BigInt(amount) * 75n) / 10n;
 
-            console.log(`💰 ${address} received vested ${ethers.formatEther(received)} ETH`);
+            console.log(`💰 ${address} received vested ${ethers.formatEther(received)} ETH for epoch ${epoch}`);
 
             if (received !== expected) {
-                console.warn(`⚠️ Unexpected vested amount. Expected ${ethers.formatEther(expected)} ETH`);
+                console.warn(`⚠️ Unexpected vested amount. Expected ${ethers.formatEther(expected)} ETH for epoch ${epoch}`);
             }
         } catch (err) {
-            console.error(`❌ Vested release failed for ${address}:`, err.message);
+            console.error(`❌ Vested release failed for ${address} in epoch ${epoch}:`, err.message);
         }
     }
 

@@ -6,8 +6,8 @@ async function main() {
   const TOKEN_ADDRESS = "0x37c779a1564DCc0e3914aB130e0e787d93e21804"; // PUSH Token
   const amountToMint = ethers.parseUnits("1000", 18); // amount each user gets
   const amountToLock = ethers.parseUnits("100", 18);  // amount each user locks
-  const amountToLock2 = ethers.parseUnits("200", 18);  // amount each user locks
-  const amountToLock3 = ethers.parseUnits("300", 18);  // amount each user locks
+  const amountToLock2 = ethers.parseUnits("250", 18);  // amount each user locks
+  const amountToLock3 = ethers.parseUnits("180", 18);  // amount each user locks
   const usersCount = 10;
 
   const [deployer] = await ethers.getSigners();
@@ -65,6 +65,10 @@ async function main() {
     const lockTx2 = await userLocker.lock(amountToLock2, user.address);
     await lockTx2.wait();
     console.log(`💰 User ${user.address} locked ${amountToLock2} PUSH`);
+
+    const epochTx = await locker.connect(deployer).initiateNewEpoch();
+    await epochTx.wait();
+    console.log("✅ Moved to next epoch");
 
     const lockTx3 = await userLocker.lock(amountToLock3, user.address);
     await lockTx3.wait();
