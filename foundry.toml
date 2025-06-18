@@ -21,7 +21,8 @@ extra_output = ["storageLayout"]
 [rpc_endpoints]
 pushchain = "https://evm.rpc-testnet-donut-node1.push.org/"
 pushlocalnet = "http://127.0.0.1:8545"
-sepolia = "${SEPOLIA_RPC_URL}"
+sepolia = "https://sepolia.infura.io/v3/${INFURA_PROJECT_ID}"
+mainnet = "https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}"
 
 # Private Keys
 [profile.env]
