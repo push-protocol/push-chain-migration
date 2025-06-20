@@ -115,7 +115,7 @@ contract MigrationLockerTest is Test {
     }
 
     function testCannotReinitialize() public {
-        vm.expectRevert("InvalidInitialization()");
+        vm.expectRevert(abi.encodeWithSelector(InvalidInitialization.selector));
         locker.initialize(address(this));
     }
 
@@ -414,4 +414,5 @@ contract MockMigrationLocker is Initializable, Ownable2StepUpgradeable, Pausable
 }
 
 error OwnableUnauthorizedAccount(address account);
+error InvalidInitialization();
 error EnforcedPause();

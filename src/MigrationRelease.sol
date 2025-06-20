@@ -14,8 +14,8 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract MigrationRelease is Initializable, Ownable2StepUpgradeable, PausableUpgradeable {
     using SafeERC20 for IERC20;
 
-    event ReleasedInstant(address indexed recipient, uint256 indexed amount, uint256 indexed releaseTime);
-    event ReleasedVested(address indexed recipient, uint256 indexed amount, uint256 indexed releaseTime);
+    event ReleasedInstant(address indexed recipient, uint256 indexed amount, uint256 indexed epochId);
+    event ReleasedVested(address indexed recipient, uint256 indexed amount, uint256 indexed epochId);
     event FundsAdded(uint256 indexed amount, uint256 indexed timestamp);
 
     event MerkleRootUpdated(bytes32 indexed oldMerkleRoot, bytes32 indexed newMerkleRoot);
@@ -103,7 +103,7 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable, PausableUpg
 
         instantClaimTime[leaf] = block.timestamp;
         totalReleased += instantAmount;
-        emit ReleasedInstant(_recipient, instantAmount, block.timestamp);
+        emit ReleasedInstant(_recipient, instantAmount, _epoch);
 
         transferFunds(_recipient, instantAmount);
     }
@@ -132,7 +132,7 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable, PausableUpg
         uint256 vestedAmount = (_amount * VESTING_RATIO) / 10; // Vested amount is 7.5 times the amount
         claimedvested[leaf] = true;
         totalReleased += vestedAmount;
-        emit ReleasedVested(_recipient, vestedAmount, block.timestamp);
+        emit ReleasedVested(_recipient, vestedAmount, _epoch);
         transferFunds(_recipient, vestedAmount);
     }
 

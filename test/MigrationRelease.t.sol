@@ -349,7 +349,7 @@ contract MigrationReleaseTest is Test {
         uint256 instantAmount = (CLAIM_AMOUNT_1 * release.INSTANT_RATIO()) / 10;
 
         vm.expectEmit(true, true, true, true);
-        emit ReleasedVested(user1, expectedAmount, block.timestamp);
+        emit ReleasedVested(user1, expectedAmount, EPOCH);
         release.releaseVested(user1, CLAIM_AMOUNT_1, EPOCH);
 
         uint256 userBalanceAfter = user1.balance;
