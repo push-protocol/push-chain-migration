@@ -54,11 +54,26 @@ The MigrationLocker contract is responsible for allowing users to lock their PUS
 **Main Functions:**
 - `lock(uint _amount, address _recipient)`: Allows users to lock tokens for migration
 - `burn(uint _amount)`: Burns tokens that have been successfully migrated
-- `setToggleLock()`: Toggles whether the contract is accepting new locks
+- `pause()`: Pauses the contract to prevent new locks
+- `unpause()`: Unpauses the contract to allow new locks
+- `initiateNewEpoch()`: Starts a new epoch for organizing locks
 - `recoverFunds(address _token, address _to, uint _amount)`: Emergency function to recover funds
 
 **Events:**
-- `Locked(address recipient, uint amount, uint indexed id)`: Emitted when tokens are locked
+- `Locked(address caller, address recipient, uint amount, uint epoch)`: Emitted when tokens are locked
+
+### Epoch System in MigrationLocker
+
+The MigrationLocker contract uses an epoch-based system to organize token locks into time periods for efficient Merkle Tree generation.
+
+**How it Works:**
+- Each epoch represents a specific time period for token locking
+- The current epoch is recorded when users lock tokens via the `Locked` event
+- Owners can start new epochs using `initiateNewEpoch()`
+- Each epoch tracks its start block for off-chain event processing
+- Epochs help organize locks into batches for systematic Merkle Tree generation and verification
+
+This system ensures organized processing of token locks across different time periods.
 
 ### MigrationRelease.sol
 
@@ -83,15 +98,17 @@ The MigrationRelease contract manages the release of migrated tokens to eligible
 - Total migration ratio: 1:15 (locked:received)
 
 **Main Functions:**
-- `releaseInstant(address _recipient, uint _amount, uint _id, bytes32[] calldata _merkleProof)`: Claims instant portion
-- `releaseVested(address _recipient, uint _amount, uint _id)`: Claims vested portion after vesting period
+- `releaseInstant(address _recipient, uint _amount, uint _epoch, bytes32[] calldata _merkleProof)`: Claims instant portion
+- `releaseVested(address _recipient, uint _amount, uint _epoch)`: Claims vested portion after vesting period
 - `setMerkleRoot(bytes32 _merkleRoot)`: Updates the Merkle root for verification
 - `addFunds()`: Adds funds to the contract for distribution
+- `pause()`: Pauses the contract to prevent claims
+- `unpause()`: Unpauses the contract to allow claims
 - `recoverFunds(address _token, address _to, uint _amount)`: Emergency function to recover funds
 
 **Events:**
-- `ReleasedInstant(address indexed recipient, uint indexed amount, uint indexed releaseTime)`
-- `ReleasedVested(address indexed recipient, uint indexed amount, uint indexed releaseTime)`
+- `ReleasedInstant(address indexed recipient, uint indexed amount, uint indexed epochId)`
+- `ReleasedVested(address indexed recipient, uint indexed amount, uint indexed epochId)`
 - `FundsAdded(uint indexed amount, uint indexed timestamp)`
 - `MerkleRootUpdated(bytes32 indexed oldMerkleRoot, bytes32 indexed newMerkleRoot)`
 
@@ -102,7 +119,7 @@ The system uses a Merkle Tree for efficient and secure verification of eligible 
 ### Merkle Tree Generation Process
 
 1. Events are collected from the MigrationLocker contract using `fetchAndStoreEvents.js`
-2. Each lock event produces a leaf in the Merkle Tree with `(address, amount, id)` as parameters
+2. Each lock event produces a leaf in the Merkle Tree with `(address, amount, epochId)` as parameters
 3. The Merkle root is calculated and set in the MigrationRelease contract
 4. Users can provide proofs to verify their eligibility when claiming tokens
 
@@ -110,10 +127,10 @@ The system uses a Merkle Tree for efficient and secure verification of eligible 
 
 The Merkle Tree implementation in `script/utils/merkle.js` provides these key functions:
 
-- `hashLeaf(address, amount, id)`: Creates hashed leaves for the Merkle Tree
+- `hashLeaf(address, amount, epochId)`: Creates hashed leaves for the Merkle Tree
 - `getRoot(claims)`: Generates the Merkle root from an array of claims
-- `getProof(address, amount, id, claims)`: Generates a Merkle proof for a specific claim
-- `verify(address, amount, id, claims)`: Verifies a claim against the Merkle Tree
+- `getProof(address, amount, epochId, claims)`: Generates a Merkle proof for a specific claim
+- `verify(address, amount, epochId, claims)`: Verifies a claim against the Merkle Tree
 
 ## Security Considerations
 
@@ -123,19 +140,19 @@ The system uses the following security measures for claims verification:
 
 1. **Double-claim prevention**: Both instant and vested claims track their status in mappings
 2. **Tamper-proof verification**: Merkle Tree verification ensures users can only claim their allocated amounts
-3. **Parameter binding**: The address, amount, and ID must all match the Merkle proof
+3. **Parameter binding**: The address, amount, and epochId must all match the Merkle proof
 4. **Contract locking**: MigrationLocker can be locked to prevent new tokens from being locked
 
 ### Access Control
 
 - Both contracts use OpenZeppelin's `Ownable2StepUpgradeable` for secure ownership management
 - Critical functions are protected with `onlyOwner` modifier
-- The MigrationLocker can be toggled between locked and unlocked states
+- Both contracts can be paused/unpaused by owners to control operations
 
 ### Deployment Scripts
 
-- `script/Deployments/DeployLocker.js`: Deploys the MigrationLocker contract
-- `script/Deployments/DeployRelease.js`: Deploys the MigrationRelease contract and sets the Merkle root
+- `script/deploy/DeployLocker.s.sol`: Deploys the MigrationLocker contract
+- `script/deploy/DeployRelease.s.sol`: Deploys the MigrationRelease contract and sets the Merkle root
 
 ## Utility Scripts
 
@@ -144,9 +161,9 @@ The project includes several utility scripts for managing the migration process:
 - `script/utils/fetchAndStoreEvents.js`: Fetches lock events from the MigrationLocker contract
 - `script/utils/merkle.js`: Contains functions for Merkle Tree generation and verification
 - `script/utils/getRoot.js`: Computes the Merkle root from claims data
-- `script/utils/getPoof.js`: Generates proofs for individual claims
-- `script/utils/verify.js`: Verifies claims against the Merkle Tree
-- `script/utils/proofArray.js`: Generates proofs for multiple claims
+- `script/testUtils/getPoof.js`: Generates proofs for individual claims
+- `script/testUtils/verify.js`: Verifies claims against the Merkle Tree
+- `script/testUtils/proofArray.js`: Generates proofs for multiple claims
 
 ## Usage Instructions
 
