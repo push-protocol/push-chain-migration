@@ -36,7 +36,6 @@ The migration system consists of two main components:
 - **Framework**: Foundry, with Hardhat for deployments
 - **Proxy Pattern**: OpenZeppelin Transparent Upgradeable Proxy
 - **Verification Mechanism**: Merkle Tree for secure, gas-efficient verification
-- **Security**: OpenZeppelin contract libraries
 
 ## Contract Details
 
@@ -46,7 +45,7 @@ The MigrationLocker contract is responsible for allowing users to lock their PUS
 
 **Key Features:**
 - Token locking mechanism with unique identifier generation
-- Safety toggles to prevent/allow locking
+- Safety toggles to prevent/allow locking - Owner Controlled
 - Proper access control with Ownable2Step pattern
 - Token burning capability for migrated tokens
 - Emergency fund recovery functionality
@@ -66,6 +65,8 @@ The MigrationLocker contract is responsible for allowing users to lock their PUS
 
 The MigrationLocker contract uses an epoch-based system to organize token locks into time periods for efficient Merkle Tree generation.
 
+It should be noted, however, that epochs are owner-controlled.
+
 **How it Works:**
 - Each epoch represents a specific time period for token locking
 - The current epoch is recorded when users lock tokens via the `Locked` event
@@ -75,6 +76,14 @@ The MigrationLocker contract uses an epoch-based system to organize token locks 
 
 This system ensures organized processing of token locks across different time periods.
 
+**Expected Workflow**
+1. Owner initiates LOCKING with `initiateNewEpoch()`, i.e., Epoch-1
+2. Duration for how long EPOCH-1 will run is flexible and decided by owner, hence owner-controlled.
+3. Users starts locking token in EPOCH-1. All such locks emit out `Locked(msg.sender, _recipient, _amount, 1)`. These event and params will be used for merkle proof creation.
+4. After 30 days, for example, owner initiates pause() and triggers `initiateNewEpoch(). i.e., EPOCH-2.
+5. Same locking cycle starts again, but now locks emits out `Locked(msg.sender, _recipient, _amount, 2)`.
+
+---
 ### MigrationRelease.sol
 
 The MigrationRelease contract manages the release of migrated tokens to eligible users based on Merkle proofs.
@@ -86,16 +95,21 @@ The MigrationRelease contract manages the release of migrated tokens to eligible
 - Fair and transparent distribution mechanism
 - Fund recovery safety mechanism
 
-## Important Constants
+## Important Constants and Params
 
 - `VESTING_PERIOD`: 90 days
 - `INSTANT_RATIO`: 75 (interpreted as 7.5x)
 - `VESTING_RATIO`: 75 (interpreted as 7.5x)
 
 **Release Model:**
-- **Instant Release**: 50% of the locked amount is immediately available
-- **Vested Release**: Additional 50% of the locked amount is available after a 90-day vesting period
-- Total migration ratio: 1:15 (locked:received)
+- **Instant Release**: 
+a. As users provide proof of their fund-lock, 50% of the locked amount is immediately released.
+b. Once released, we record the timestamp of instant release.
+c. Only after 90 days of this timestamp, users can unlock their vested release.
+
+- **Vested Release**: 
+a. Vested release is the release that takes place 90 days after instant release. 
+b. Merkle proof is still required but the 90 days check is additionally imposed.
 
 **Main Functions:**
 - `releaseInstant(address _recipient, uint _amount, uint _epoch, bytes32[] calldata _merkleProof)`: Claims instant portion
@@ -125,7 +139,14 @@ The system uses a Merkle Tree for efficient and secure verification of eligible 
 
 ### Technical Implementation
 
-The Merkle Tree implementation in `script/utils/merkle.js` provides these key functions:
+The utility scripts in the `script/utils` folder handle the Merkle tree generation process:
+
+- **merkle.js**: Core Merkle tree implementation with functions to hash leaves, generate roots, create proofs, and verify claims using the (address, amount, epoch) format.
+- **fetchAndStoreEvents.js**: Fetches all "Locked" events from the MigrationLocker contract, groups them by address and epoch, combines amounts for duplicate addresses within the same epoch, and saves the processed claims.
+- **getRoot.js**: Simple utility that loads processed claims and generates the Merkle root for deployment to the MigrationRelease contract.
+- **config.js**: Contains configuration settings for contract addresses, ABIs, and file paths used by the utility scripts.
+
+Key functions in `merkle.js`:
 
 - `hashLeaf(address, amount, epochId)`: Creates hashed leaves for the Merkle Tree
 - `getRoot(claims)`: Generates the Merkle root from an array of claims
@@ -154,23 +175,12 @@ The system uses the following security measures for claims verification:
 - `script/deploy/DeployLocker.s.sol`: Deploys the MigrationLocker contract
 - `script/deploy/DeployRelease.s.sol`: Deploys the MigrationRelease contract and sets the Merkle root
 
-## Utility Scripts
-
-The project includes several utility scripts for managing the migration process:
-
-- `script/utils/fetchAndStoreEvents.js`: Fetches lock events from the MigrationLocker contract
-- `script/utils/merkle.js`: Contains functions for Merkle Tree generation and verification
-- `script/utils/getRoot.js`: Computes the Merkle root from claims data
-- `script/testUtils/getPoof.js`: Generates proofs for individual claims
-- `script/testUtils/verify.js`: Verifies claims against the Merkle Tree
-- `script/testUtils/proofArray.js`: Generates proofs for multiple claims
-
 ## Usage Instructions
 
 ### Building the Project
 
 ```shell
-npx hardhat compile
+forge build
 ```
 
 ### Testing the Project
