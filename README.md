@@ -45,7 +45,7 @@ The MigrationLocker contract is responsible for allowing users to lock their PUS
 
 **Key Features:**
 - Token locking mechanism with unique identifier generation
-- Safety toggles to prevent/allow locking - Owner Controlled
+- Openzeppelin's Pausable library to prevent/allow locking - Owner Controlled
 - Proper access control with Ownable2Step pattern
 - Token burning capability for migrated tokens
 - Emergency fund recovery functionality
