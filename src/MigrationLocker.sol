@@ -33,6 +33,9 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable, PausableUpgr
     /// @param epoch The epoch number
     event Locked(address caller, address recipient, uint256 amount, uint256 epoch);
 
+    /// @notice Emitted when a admin initiates a new epoch
+    event NewEpoch(uint256 indexed epoch, uint256 indexed startBlock);
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
         _disableInitializers();
@@ -49,9 +52,13 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable, PausableUpgr
         initiateNewEpoch();
     }
 
+    /// @notice Allows the owner to initiate a new epoch
+    /// @dev The function increments the epoch number and sets the start block for the new epoch
+    /// @dev Emits a NewEpoch event with the epoch number and start block
     function initiateNewEpoch() public onlyOwner {
         epoch++;
         epochStartBlock[epoch] = block.number;
+        emit NewEpoch(epoch, block.number);
     }
 
     /// Pauseable Features
@@ -68,7 +75,7 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable, PausableUpgr
     /// @param _recipient The address of the recipient
     /// @dev The recipient address cannot be zero
     /// @dev The function transfers the specified amount of tokens from the user to the contract
-    /// @dev Emits a Locked event with the recipient address, amount, and a unique identifier
+    /// @dev Emits a Locked event with the recipient address, amount, and epoch
     function lock(uint256 _amount, address _recipient) external whenNotPaused {
         uint256 codeLength;
         assembly {
