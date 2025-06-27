@@ -149,7 +149,6 @@ contract MigrationReleaseTest is Test {
     //////////////////////////////////////////////////////////////*/
 
     function testInitialization() public {
-        assertEq(release.isClaimPaused(), false);
         assertEq(release.owner(), owner);
         assertEq(release.merkleRoot(), merkleRoot);
         assertEq(address(release).balance, 10_000 ether);

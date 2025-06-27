@@ -27,7 +27,6 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable, PausableUpg
     uint256 public constant VESTING_RATIO = 75;
 
     uint256 public totalReleased;
-    bool public isClaimPaused;
 
     mapping(bytes32 => uint256) public instantClaimTime;
 
@@ -83,7 +82,7 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable, PausableUpg
     /// @dev calculates the instant amount based on the INSTANT_RATIO
     /// @dev updates the instantClaimTime mapping and totalReleased variable
     /// @dev transfers the instant amount to the recipient, reverting if the transfer fails
-    /// @dev emits a ReleasedInstant event with the recipient address, amount, and release time
+    /// @dev emits a ReleasedInstant event with the recipient address, amount, and epoch
 
     function releaseInstant(
         address _recipient,
@@ -95,11 +94,8 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable, PausableUpg
         whenNotPaused
     {
         bytes32 leaf = keccak256(abi.encodePacked(_recipient, _amount, _epoch));
-        require(
-            verifyAddress(_recipient, _amount, _epoch, _merkleProof) && instantClaimTime[leaf] == 0,
-            "Not Whitelisted or already Claimed"
-        );
-        uint256 instantAmount = (_amount * INSTANT_RATIO) / 10; //Instantly relaese 7.5 times the amount
+        require(verifyAddress(leaf, _merkleProof) && instantClaimTime[leaf] == 0, "Not Whitelisted or already Claimed");
+        uint256 instantAmount = (_amount * INSTANT_RATIO) / 10; //Instantly release 7.5 times the amount
 
         instantClaimTime[leaf] = block.timestamp;
         totalReleased += instantAmount;
@@ -117,11 +113,11 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable, PausableUpg
     /// @dev calculates the vested amount based on the VESTING_RATIO
     /// @dev updates the claimedvested mapping and totalReleased variable
     /// @dev transfers the vested amount to the recipient, reverting if the transfer fails
-    /// @dev emits a ReleasedVested event with the recipient address, amount, and release time
+    /// @dev emits a ReleasedVested event with the recipient address, amount, and epoch
 
     function releaseVested(address _recipient, uint256 _amount, uint256 _epoch) external whenNotPaused {
         bytes32 leaf = keccak256(abi.encodePacked(_recipient, _amount, _epoch));
-        if (claimedvested[leaf] == true) {
+        if (claimedvested[leaf]) {
             revert("Already Claimed");
         }
 
@@ -144,18 +140,8 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable, PausableUpg
         require(res, "Transfer failed");
     }
 
-    function verifyAddress(
-        address recipient,
-        uint256 amount,
-        uint256 _epoch,
-        bytes32[] calldata _merkleProof
-    )
-        private
-        view
-        returns (bool)
-    {
-        bytes32 leaf = keccak256(abi.encodePacked(recipient, amount, _epoch));
-        return MerkleProof.verify(_merkleProof, merkleRoot, leaf);
+    function verifyAddress(bytes32 _leaf, bytes32[] calldata _merkleProof) private view returns (bool) {
+        return MerkleProof.verify(_merkleProof, merkleRoot, _leaf);
     }
 
     function recoverFunds(address _token, address _to, uint256 _amount) external onlyOwner whenNotPaused {
@@ -163,7 +149,6 @@ contract MigrationRelease is Initializable, Ownable2StepUpgradeable, PausableUpg
 
         if (_token == address(0)) {
             transferFunds(_to, _amount);
-            return;
         } else {
             require(_amount > 0 && _amount <= IERC20(_token).balanceOf(address(this)), "Invalid amount");
             IERC20(_token).safeTransfer(_to, _amount);
