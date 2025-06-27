@@ -4,12 +4,16 @@ pragma solidity 0.8.29;
 import { PausableUpgradeable } from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import { Ownable2StepUpgradeable } from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import { Initializable } from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { IPUSH } from "./interfaces/IPush.sol";
 
 /// @title MigrationLocker
 /// @author Push Chain
 /// @notice Allows users to lock their Push tokens for migration
 contract MigrationLocker is Initializable, Ownable2StepUpgradeable, PausableUpgradeable {
+    using SafeERC20 for IERC20;
+
     /// @notice Indicates the current epoch
     /// @dev    Each specific epoch represents a particular block of time under which all Locked events will be
     ///         recorded to create the merkle tree all user deposits done in that specific epoch.
@@ -85,7 +89,7 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable, PausableUpgr
             revert("Invalid recipient");
         }
 
-        IPUSH(PUSH_TOKEN).transferFrom(msg.sender, address(this), _amount);
+        IERC20(PUSH_TOKEN).safeTransferFrom(msg.sender, address(this), _amount);
         emit Locked(msg.sender, _recipient, _amount, epoch);
     }
 
@@ -122,7 +126,7 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable, PausableUpgr
         IPUSH(PUSH_TOKEN).permit(msg.sender, address(this), _amount, _deadline, _v, _r, _s);
 
         // Transfer the approved tokens to this contract
-        IPUSH(PUSH_TOKEN).transferFrom(msg.sender, address(this), _amount);
+        IERC20(PUSH_TOKEN).safeTransferFrom(msg.sender, address(this), _amount);
         emit Locked(msg.sender, _recipient, _amount, epoch);
     }
 
@@ -137,7 +141,7 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable, PausableUpgr
     function recoverFunds(address _token, address _to, uint256 _amount) external onlyOwner whenNotPaused {
         require(_to != address(0), "Invalid recipient");
 
-        require(_amount > 0 && _amount <= IPUSH(_token).balanceOf(address(this)), "Invalid amount");
-        IPUSH(_token).transfer(_to, _amount);
+        require(_amount > 0 && _amount <= IERC20(_token).balanceOf(address(this)), "Invalid amount");
+        IERC20(_token).safeTransfer(_to, _amount);
     }
 }
