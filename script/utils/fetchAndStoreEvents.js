@@ -113,14 +113,27 @@ async function main() {
   for (const epoch of epochsToProcess) {
     const offChainTotal = epochTotals[epoch] || BigInt(0);
 
-    // Get on-chain total (contract balance at end of epoch)
+    // Get on-chain total (incremental balance for this epoch)
     let onChainTotal;
     if (epoch === currentEpoch) {
-      onChainTotal = await pushToken.balanceOf(CONTRACT_ADDRESS);
+      // For current epoch: current balance minus balance at start of current epoch
+      const currentBalance = await pushToken.balanceOf(CONTRACT_ADDRESS);
+      const currentEpochStart = await locker.epochStartBlock(currentEpoch);
+      const balanceAtStart = await pushToken.balanceOf(CONTRACT_ADDRESS, {
+        blockTag: Number(currentEpochStart) - 1
+      });
+      onChainTotal = currentBalance - balanceAtStart;
     } else {
+      // For past epochs: balance at end of epoch minus balance at start of epoch
       const nextEpochStart = await locker.epochStartBlock(epoch + 1);
+      const epochStart = await locker.epochStartBlock(epoch);
+
       const endBlockOfEpoch = Number(nextEpochStart) - 1;
-      onChainTotal = await pushToken.balanceOf(CONTRACT_ADDRESS, { blockTag: endBlockOfEpoch });
+      const startBlockOfEpoch = Number(epochStart) - 1;
+
+      const endBalance = await pushToken.balanceOf(CONTRACT_ADDRESS, { blockTag: endBlockOfEpoch });
+      const startBalance = await pushToken.balanceOf(CONTRACT_ADDRESS, { blockTag: startBlockOfEpoch });
+      onChainTotal = endBalance - startBalance;
     }
 
     if (offChainTotal !== onChainTotal) {
