@@ -38,7 +38,7 @@ contract MigrationLocker is Initializable, Ownable2StepUpgradeable, PausableUpgr
     event Locked(address caller, address recipient, uint256 amount, uint256 epoch);
 
     /// @notice Emitted when a admin initiates a new epoch
-    event NewEpoch(uint256 indexed epoch, uint256 indexed startBlock);
+    event NewEpoch(uint256 epoch, uint256 startBlock);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
