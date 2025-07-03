@@ -7,9 +7,15 @@ async function main() {
   const CONTRACT_ADDRESS = LOCKER_CONFIG.CONTRACT_ADDRESS;
   const LOCKER_ABI = LOCKER_CONFIG.ABI;
   const FILTER_EPOCHS = LOCKER_CONFIG.FILTER_EPOCHS;
+  const PUSH_TOKEN_ADDRESS = "0xf418588522d5dd018b425E472991E52EBBeEEEEE";
 
   const provider = ethers.provider;
   const locker = new ethers.Contract(CONTRACT_ADDRESS, LOCKER_ABI, provider);
+
+  // Add PUSH token interface for balance validation
+  const pushToken = new ethers.Contract(PUSH_TOKEN_ADDRESS, [
+    "function balanceOf(address account) view returns (uint256)"
+  ], provider);
 
   // Get current epoch from contract
   const currentEpoch = await locker.epoch();
@@ -48,6 +54,7 @@ async function main() {
   // Group events by address and combine amounts
   const addressAmounts = {};
   let totalEvents = 0;
+  const epochTotals = {}; // Track total amount per epoch from events
 
   // Process events and filter by epoch on the client side
   for (const event of allEvents) {
@@ -75,6 +82,13 @@ async function main() {
         epoch: eventEpoch.toString()
       };
     }
+
+    // Track total per epoch
+    if (!epochTotals[eventEpoch]) {
+      epochTotals[eventEpoch] = BigInt(0);
+    }
+    epochTotals[eventEpoch] += amount;
+
     totalEvents++;
   }
 
@@ -92,6 +106,48 @@ async function main() {
   if (duplicateCount > 0) {
     console.log(`🔄 Combined ${duplicateCount} duplicate addresses`);
   }
+
+  // Validate that sum of all leaves equals on-chain locked amounts
+  console.log(`\n🔍 Validating totals against on-chain state...`);
+
+  for (const epoch of epochsToProcess) {
+    const offChainTotal = epochTotals[epoch] || BigInt(0);
+
+    // Get on-chain total (incremental balance for this epoch)
+    let onChainTotal;
+    if (epoch === currentEpoch) {
+      // For current epoch: current balance minus balance at start of current epoch
+      const currentBalance = await pushToken.balanceOf(CONTRACT_ADDRESS);
+      const currentEpochStart = await locker.epochStartBlock(currentEpoch);
+      const balanceAtStart = await pushToken.balanceOf(CONTRACT_ADDRESS, {
+        blockTag: Number(currentEpochStart) - 1
+      });
+      onChainTotal = currentBalance - balanceAtStart;
+    } else {
+      // For past epochs: balance at end of epoch minus balance at start of epoch
+      const nextEpochStart = await locker.epochStartBlock(epoch + 1);
+      const epochStart = await locker.epochStartBlock(epoch);
+
+      const endBlockOfEpoch = Number(nextEpochStart) - 1;
+      const startBlockOfEpoch = Number(epochStart) - 1;
+
+      const endBalance = await pushToken.balanceOf(CONTRACT_ADDRESS, { blockTag: endBlockOfEpoch });
+      const startBalance = await pushToken.balanceOf(CONTRACT_ADDRESS, { blockTag: startBlockOfEpoch });
+      onChainTotal = endBalance - startBalance;
+    }
+
+    if (offChainTotal !== onChainTotal) {
+      console.error(`❌ Validation failed for epoch ${epoch}:`);
+      console.error(`   Off-chain total: ${offChainTotal.toString()}`);
+      console.error(`   On-chain total: ${onChainTotal.toString()}`);
+      console.error(`   Difference: ${(offChainTotal > onChainTotal ? offChainTotal - onChainTotal : onChainTotal - offChainTotal).toString()}`);
+      throw new Error(`Funds may be missing for epoch ${epoch}`);
+    }
+
+    console.log(`✅ Epoch ${epoch}: ${offChainTotal.toString()} wei`);
+  }
+
+  console.log(`\n✅ All validations passed!`);
 
   const outputPath = path.join(__dirname, OUTPUT_CONFIG.CLAIMS_PATH);
   fs.mkdirSync(path.dirname(outputPath), { recursive: true });
